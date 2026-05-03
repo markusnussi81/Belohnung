@@ -60,10 +60,11 @@
             padding-bottom: 120px;
         }
 
-        header { text-align: center; padding: 15px 0 10px 0; }
+        header { text-align: center; padding: 5px 0 5px 0; }
         h1 { 
-            font-size: 2.8rem; 
+            font-size: 2.6rem; 
             margin: 0; 
+            line-height: 1.1;
             background: linear-gradient(to right, #fbbf24, #f59e0b, #fbbf24);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -74,7 +75,7 @@
 
         .version-bar {
             display: flex; justify-content: center; align-items: center; gap: 8px;
-            font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-top: 5px; letter-spacing: 1px;
+            font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-top: 0px; letter-spacing: 1px;
         }
         .status-dot {
             width: 10px; height: 10px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 8px #ef4444; transition: all 0.3s ease;
@@ -90,7 +91,7 @@
             font-weight: 800;
             font-size: 1.1rem;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 5px;
             box-shadow: 0 4px 10px rgba(56, 189, 248, 0.2);
             transition: all 0.2s;
         }
@@ -257,7 +258,7 @@
                 <span>v3.2</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
-            <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
+            <div id="unlock-status-container" style="min-height: 30px; margin-top: 0px;"></div>
             <button class="btn-info" onclick="window.openTasksInfoModal()">📋 Aufgaben & Ziele</button>
         </header>
         <div id="kids-container" class="kids-grid"></div>
