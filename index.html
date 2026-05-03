@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v2.6</title>
+    <title>Kids Star Tracker Pro v2.7</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js" crossorigin="anonymous"></script>
@@ -312,7 +312,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v2.6</span>
+                <span>v2.7</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
             <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
@@ -373,7 +373,14 @@
         </div>
     </div>
 
-    <div id="history-modal" class="modal"><div class="modal-content-scroll"><button class="btn-close-top" onclick="closeModal('history-modal')">X</button><h2>📜 Historie</h2><div id="history-list"></div></div></div>
+    <div id="history-modal" class="modal">
+        <div class="modal-content-scroll">
+            <button class="btn-close-top" onclick="closeModal('history-modal')">X</button>
+            <h2>📜 Historie</h2>
+            <div id="history-list"></div>
+            <div id="history-footer" style="margin-top: 20px;"></div>
+        </div>
+    </div>
     <div id="info-modal" class="modal"><div class="modal-content-scroll"><button class="btn-close-top" onclick="closeModal('info-modal')">X</button><h2>📋 Ziele & Aufgaben</h2><div id="info-goals-list"></div><br><div id="info-tasks-list" class="tasks-grid"></div></div></div>
     <div id="icon-modal" class="modal"><div class="modal-content-scroll" style="max-width: 500px;"><button class="btn-close-top" onclick="closeModal('icon-modal')">X</button><h2 style="text-align: center; color: var(--blue);">Wähle ein Icon</h2><div id="icon-grid" class="icon-grid"></div></div></div>
 
@@ -482,7 +489,7 @@
             // Neuer History Eintrag mit Datumsstempel
             state.history.push({ kidName: k.name, points: v, taskName, timestamp: Date.now() });
             
-            if (state.history.length > 100) state.history.shift(); // Etwas mehr Historie zulassen
+            if (state.history.length > 200) state.history.shift(); 
             render(); syncToCloud();
         }
 
@@ -491,6 +498,13 @@
         function triggerResetSystem() { openModal('confirm-reset-modal'); }
         function executeMasterReset() { state.kids.forEach(k => { k.count = 0; k.ackTens = 0; }); closeModal('confirm-reset-modal'); closeModal('config-modal'); render(); syncToCloud(); showMessage("Reset durchgeführt! ✅"); }
         function manualLock() { lastUnlockTime = 0; updateUnlockDisplay(); showMessage("Gesperrt! 🔒"); }
+
+        function clearHistory() {
+            state.history = [];
+            syncToCloud();
+            openHistoryModal(); // Refresh view
+            showMessage("Historie wurde gelöscht! 🗑️");
+        }
 
         function render() {
             const container = document.getElementById('kids-container');
@@ -631,8 +645,10 @@
 
         function openHistoryModal() {
             const historyList = document.getElementById('history-list');
+            const footer = document.getElementById('history-footer');
             if (!state.history.length) {
                 historyList.innerHTML = '<p style="text-align:center;color:#94a3b8;">Noch keine Sterne vergeben.</p>';
+                footer.innerHTML = '';
             } else {
                 historyList.innerHTML = [...state.history].reverse().map(h => {
                     const dateStr = h.timestamp ? new Date(h.timestamp).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
@@ -648,6 +664,7 @@
                         </div>
                     </div>`;
                 }).join('');
+                footer.innerHTML = `<button onclick="checkPin(() => clearHistory())" style="width:100%; padding:12px; border-radius:15px; background:rgba(239,68,68,0.1); color:#f87171; border:1px solid #f87171; font-weight:bold; cursor:pointer; font-family:'Baloo 2';">🗑️ Historie leeren</button>`;
             }
             openModal('history-modal');
         }
