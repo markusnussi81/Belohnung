@@ -77,7 +77,7 @@
             font-weight: 800;
         }
 
-        /* Der neue winzige Sync-Status-Punkt */
+        /* Der winzige Sync-Status-Punkt */
         .version-bar {
             display: flex; justify-content: center; align-items: center; gap: 8px;
             font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-top: 5px; letter-spacing: 1px;
@@ -313,7 +313,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v1.5</span>
+                <span>v1.7</span>
                 <div id="status-dot" class="status-dot" title="Sync Status"></div>
             </div>
             <div id="unlock-status"></div>
@@ -402,27 +402,28 @@
     </div>
 
     <script>
+        // =========================================================================
+        // 🛑 DEINE EIGENE DATENBANK FÜR DEN SYNC AUF GITHUB & ALLEN GERÄTEN 🛑
+        // =========================================================================
+        // Diese Daten hast du erfolgreich aus Firebase kopiert!
+        const MY_OWN_FIREBASE_CONFIG = {
+            apiKey: "AIzaSyBmhtGvkbvFmA7gOX02kW7ZWCA3VrEPQS0",
+            authDomain: "belohnung-6be28.firebaseapp.com",
+            projectId: "belohnung-6be28",
+            storageBucket: "belohnung-6be28.firebasestorage.app",
+            messagingSenderId: "438643009599",
+            appId: "1:438643009599:web:c91d720794a5cbd1dfb08a",
+            measurementId: "G-4WRCVNC7GT"
+        };
+        // =========================================================================
+
         // CONFIG & STATE
         const PIN = "8458";
         const UNLOCK_DURATION = 3 * 60 * 1000; 
         
-        let firebaseConfigStr = null;
-        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-            firebaseConfigStr = __firebase_config;
-            localStorage.setItem('pwa_fb_config', firebaseConfigStr);
-        } else {
-            firebaseConfigStr = localStorage.getItem('pwa_fb_config');
-        }
-
-        let appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-star-tracker-pro';
-        
-        let authToken = null;
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            authToken = __initial_auth_token;
-            localStorage.setItem('pwa_auth_token', authToken);
-        } else {
-            authToken = localStorage.getItem('pwa_auth_token');
-        }
+        let firebaseConfigObj = MY_OWN_FIREBASE_CONFIG;
+        let useOwnDatabase = true;
+        let appId = firebaseConfigObj.projectId;
 
         // --- LOKALER ZWISCHENSPEICHER ---
         const LOCAL_STORAGE_KEY = 'star_tracker_local_state_' + appId;
@@ -447,9 +448,8 @@
         let firebaseReady = false;
 
         try {
-            if (firebaseConfigStr) {
-                const configObj = JSON.parse(firebaseConfigStr);
-                firebase.initializeApp(configObj);
+            if (firebaseConfigObj) {
+                firebase.initializeApp(firebaseConfigObj);
                 auth = firebase.auth();
                 db = firebase.firestore();
                 db.enablePersistence().catch(err => console.log("Offline-Persistenz Warnung:", err));
@@ -465,6 +465,7 @@
         let activeKidForIcon = null;
         let activeKidForPoints = null;
 
+        // Der Pfad, unter dem in der Datenbank gespeichert wird
         const dbPath = `artifacts/${appId}/public/data/cloud_sync/state`;
 
         // UI HELPERS
@@ -504,29 +505,13 @@
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
         function hideLoadingScreen() { const screen = document.getElementById('loading-screen'); if(screen) screen.style.display = 'none'; }
 
-        // --- ROBUSTER FIREBASE SYNC (MIT RETRY-LOGIK FÜR PWAs) ---
+        // --- ROBUSTER FIREBASE SYNC ---
         async function initSync() {
             setStatus('connecting');
             if (!firebaseReady) { hideLoadingScreen(); setStatus('offline'); render(); return; }
             
-            let authenticated = false;
-            // Versuch die Anmeldung 5 mal (wichtig, wenn PWA aus dem Tiefschlaf kommt)
-            for(let i = 0; i < 5; i++) {
-                try {
-                    if (authToken) {
-                        try { await auth.signInWithCustomToken(authToken); authenticated = true; break; } 
-                        catch (tokenErr) { await auth.signInAnonymously(); authenticated = true; break; }
-                    } else {
-                        await auth.signInAnonymously(); authenticated = true; break;
-                    }
-                } catch(e) {
-                    await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Kurz warten, dann noch mal probieren
-                }
-            }
-
-            if(!authenticated) {
-                hideLoadingScreen(); setStatus('offline'); render(); return;
-            }
+            // Mit eigener DB (Testmodus) einloggen, um Errors zu vermeiden
+            try { await auth.signInAnonymously(); } catch(e) {}
 
             const docRef = db.doc(dbPath);
             docRef.onSnapshot((doc) => {
@@ -543,6 +528,7 @@
                     render();
                 }
             }, (error) => {
+                console.error("Firestore Fehler:", error);
                 hideLoadingScreen();
                 setStatus('offline');
                 render(); 
@@ -551,14 +537,13 @@
 
         async function syncToCloud() {
             localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
-            if (!firebaseReady || !auth.currentUser) return;
+            if (!firebaseReady) return;
             try { await db.doc(dbPath).set(state); } catch (e) { setStatus('offline'); }
         }
 
         // --- AUTO-RECONNECT FÜR iOS ---
-        // Zwingt die App, die Cloud neu zu laden, wenn man sie aus dem Hintergrund wieder öffnet
         document.addEventListener("visibilitychange", () => {
-            if (document.visibilityState === "visible" && firebaseReady && auth && auth.currentUser) {
+            if (document.visibilityState === "visible" && firebaseReady) {
                 setStatus('connecting');
                 if(db) {
                     db.enableNetwork().then(() => setStatus('online')).catch(() => setStatus('offline'));
