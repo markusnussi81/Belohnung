@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v2.5</title>
+    <title>Kids Star Tracker Pro v2.6</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js" crossorigin="anonymous"></script>
@@ -285,6 +285,15 @@
         }
         .icon-choice:active { transform: scale(0.9); background: rgba(56, 189, 248, 0.2); border-color: var(--blue); }
 
+        /* Historie Detail Styles */
+        .history-entry { 
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); 
+            padding: 12px; border-radius: 18px; margin-bottom: 10px;
+        }
+        .history-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+        .history-date { font-size: 0.75rem; color: #94a3b8; font-weight: bold; }
+        .history-pts { font-weight: 800; font-size: 1.1rem; }
+
         #loading-screen { position: fixed; inset: 0; background: var(--bg-gradient); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { width: 60px; height: 60px; border: 6px solid rgba(56, 189, 248, 0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -303,7 +312,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v2.5</span>
+                <span>v2.6</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
             <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
@@ -469,8 +478,11 @@
             const oldTens = Math.floor(k.count / step);
             k.count = Math.max(0, Math.round((k.count + v) * 10) / 10);
             if (v > 0 && Math.floor(k.count / step) > oldTens) confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
+            
+            // Neuer History Eintrag mit Datumsstempel
             state.history.push({ kidName: k.name, points: v, taskName, timestamp: Date.now() });
-            if (state.history.length > 50) state.history.shift();
+            
+            if (state.history.length > 100) state.history.shift(); // Etwas mehr Historie zulassen
             render(); syncToCloud();
         }
 
@@ -618,11 +630,25 @@
         function removeTaskConfig(i) { state.tasks.splice(i, 1); renderTasksConfig(); }
 
         function openHistoryModal() {
-            document.getElementById('history-list').innerHTML = state.history.length ? [...state.history].reverse().map(h => `
-                <div class="task-btn-item" style="flex-direction:row;justify-content:space-between;width:100%;margin-bottom:5px;">
-                    <div style="text-align:left;"><b>${h.kidName}</b>: ${h.taskName}</div>
-                    <div style="color:${h.points>0?'var(--gold)':'#f87171'}">${h.points>0?'+':''}${h.points}</div>
-                </div>`).join('') : '<p>Keine Einträge</p>';
+            const historyList = document.getElementById('history-list');
+            if (!state.history.length) {
+                historyList.innerHTML = '<p style="text-align:center;color:#94a3b8;">Noch keine Sterne vergeben.</p>';
+            } else {
+                historyList.innerHTML = [...state.history].reverse().map(h => {
+                    const dateStr = h.timestamp ? new Date(h.timestamp).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                    return `
+                    <div class="history-entry">
+                        <div class="history-top">
+                            <div style="text-align:left;"><b>${h.kidName}</b></div>
+                            <div class="history-date">${dateStr}</div>
+                        </div>
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                            <div style="font-size:0.95rem;">${h.taskName}</div>
+                            <div class="history-pts" style="color:${h.points>0?'var(--gold)':'#f87171'}">${h.points>0?'+':''}${h.points} ⭐</div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
             openModal('history-modal');
         }
 
@@ -637,13 +663,13 @@
             activeKidForIcon = id; 
             const icons = [
                 // Tiere & Kreaturen
-                '🦄','🚀','🦖','🐉','🐶','🐱','🐭','🐰','🦁','🐼','🐻','🐨','🦊','🐮','🐵','🐸','🦋','🐞','🐝','🐢','🐬','🐳','🦁','🐆',
+                '🦄','🚀','🦖','🐉','🐶','🐱','🐭','🐰','🦁','🐼','🐻','🐨','🦊','🐮','🐵','🐸','🦋','🐞','🐝','🐢','🐬','🐳','🐆',
                 // Fantasy & Cool
                 '🦸','🦹','🧙','🧚','👑','💎','🧨','💣','⚡','🔥','🌈','🪐','🔭','🛸',
                 // Sport & Spiele
                 '⚽','🏀','🎾','🏉','🥊','⛸️','🏄','🚴','🎮','🕹️','🎨','🎸','🥁','🛹',
                 // Essen & Spaß
-                '🍦','🍔','🍕','🍟','🍭','🍬','🍩','🎈','🍭',' popcorn','🥤'
+                '🍦','🍔','🍕','🍟','🍭','🍬','🍩','🎈','🍿','🥤'
             ]; 
             document.getElementById('icon-grid').innerHTML = icons.map(i => `<button class="icon-choice" onclick="selectIcon('${i}')">${i}</button>`).join(''); 
             openModal('icon-modal'); 
