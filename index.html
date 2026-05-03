@@ -365,11 +365,23 @@
         const PIN = "8458";
         const UNLOCK_DURATION = 3 * 60 * 1000; 
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-star-tracker-pro';
-        const firebaseConfig = JSON.parse(__firebase_config);
         
-        firebase.initializeApp(firebaseConfig);
-        const auth = firebase.auth();
-        const db = firebase.firestore();
+        // Globale Firebase Variablen (sicher initialisieren)
+        let auth = null;
+        let db = null;
+        let firebaseReady = false;
+
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                const firebaseConfig = JSON.parse(__firebase_config);
+                firebase.initializeApp(firebaseConfig);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                firebaseReady = true;
+            }
+        } catch (e) {
+            console.error("Firebase Setup Error:", e);
+        }
 
         let lastUnlockTime = 0;
         let currentPin = "";
@@ -423,8 +435,22 @@
         function openModal(id) { document.getElementById(id).classList.add('active'); }
         function closeModal(id) { document.getElementById(id).classList.remove('active'); }
 
+        function hideLoadingScreen() {
+            const screen = document.getElementById('loading-screen');
+            if(screen) screen.style.display = 'none';
+        }
+
         // FIREBASE SYNC
         async function initSync() {
+            // Wenn Firebase nicht existiert oder fehlerhaft ist, lade lokal!
+            if (!firebaseReady) {
+                hideLoadingScreen();
+                document.getElementById('status-dot').className = 'dot-status';
+                document.getElementById('status-text').innerText = 'Offline Modus';
+                render();
+                return;
+            }
+
             try {
                 if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                     await auth.signInWithCustomToken(__initial_auth_token);
@@ -435,39 +461,48 @@
                 const docRef = db.doc(dbPath);
 
                 docRef.onSnapshot((doc) => {
-                    document.getElementById('loading-screen').style.display = 'none';
+                    hideLoadingScreen();
                     document.getElementById('status-dot').className = 'dot-status dot-online';
                     document.getElementById('status-text').innerText = 'Cloud Verbunden';
 
                     if (doc.exists) {
                         const data = doc.data();
                         state.kids = data.kids || state.kids;
-                        state.tasks = data.tasks || state.tasks; // Tasks beim Sync berücksichtigen
+                        state.tasks = data.tasks || state.tasks;
                         render();
                     } else {
                         docRef.set(state);
+                        render();
                     }
                 }, (error) => {
                     console.error("Firestore Error:", error);
+                    hideLoadingScreen();
                     document.getElementById('status-dot').className = 'dot-status';
-                    document.getElementById('status-text').innerText = 'Offline';
+                    document.getElementById('status-text').innerText = 'Offline (Kein Sync)';
+                    render(); // Render local if cloud fails
                 });
 
             } catch (e) {
                 console.error("Auth error", e);
-                showMessage("Login fehlgeschlagen.");
+                hideLoadingScreen();
+                document.getElementById('status-dot').className = 'dot-status';
+                document.getElementById('status-text').innerText = 'Offline Modus';
+                render(); // Render local if auth fails
             }
         }
 
         async function syncToCloud() {
-            if (!auth.currentUser) return;
-            try { await db.doc(dbPath).set(state); } 
-            catch (e) { console.error("Sync Error", e); showMessage("Speichern fehlgeschlagen!"); }
+            if (!firebaseReady || !auth.currentUser) return;
+            try { 
+                await db.doc(dbPath).set(state); 
+            } catch (e) { 
+                console.error("Sync Error", e); 
+                showMessage("Speichern in Cloud fehlgeschlagen!"); 
+            }
         }
 
         // RENDERING
         function renderTallies(count) {
-            // Runden auf 1 Nachkommastelle um float errors zu vermeiden (z.B. 1.0000001)
             const exactCount = Math.round(count * 10) / 10;
             const block = exactCount % 10;
             
@@ -494,9 +529,7 @@
                 marks += `<div class="star-icon half-star" style="animation-delay: ${(fullStars+1)*0.03}s">🌟</div>`;
             }
             
-            // Textanzeige der genauen Punktzahl im Block
             marks += `<div style="width: 100%; text-align: center; color: var(--gold); font-weight: 800; font-size: 0.9rem; margin-top: 5px;">${block} / 10</div>`;
-
             return marks;
         }
 
@@ -528,9 +561,7 @@
                         </div>
 
                         <div class="controls">
-                            <!-- Minus zieht jetzt 0.5 ab -->
                             <button class="btn-action btn-minus" onclick="checkPin(()=>updateCount(${k.id}, -0.5))">-</button>
-                            <!-- Plus öffnet das Menü für Aufgaben -->
                             <button class="btn-action btn-plus" onclick="checkPin(()=>openAddPointsModal(${k.id}))">+</button>
                         </div>
 
@@ -548,7 +579,6 @@
             const kid = state.kids.find(k => k.id === kidId);
             document.getElementById('add-points-title').innerText = `Punkte für ${kid.name}`;
             
-            // Render Tasks List
             const list = document.getElementById('add-tasks-list');
             list.innerHTML = '';
             if(!state.tasks || state.tasks.length === 0) {
@@ -573,20 +603,20 @@
 
         function updateCount(id, v) { 
             const kid = state.kids.find(k => k.id === id);
-            // Rechnen mit 1 Nachkommastelle, keine negativen Werte
             kid.count = Math.max(0, Math.round((kid.count + v) * 10) / 10);
             
-            // Konfetti nur bei glatten 10ern (und wenn Punkte hinzugefügt wurden)
             if (v > 0 && kid.count > 0 && kid.count % 10 === 0) {
                 triggerConfetti();
             }
             
-            syncToCloud(); 
+            render(); // SOFORTIGES Update für den Nutzer (verhindert Wartezeiten)
+            syncToCloud(); // Speichert asynchron im Hintergrund
         }
 
         function resetKid(id) {
             const kid = state.kids.find(k => k.id === id);
             kid.count = Math.floor(kid.count / 10) * 10;
+            render();
             syncToCloud();
         }
 
@@ -594,13 +624,13 @@
             if (confirm("MASTER RESET: Wirklich ALLES auf Null setzen? Dies kann nicht rückgängig gemacht werden!")) {
                 state.kids.forEach(k => k.count = 0);
                 closeConfig();
+                render();
                 syncToCloud();
             }
         }
 
         // --- INFO MODAL (Ohne PIN) ---
         function openTasksInfoModal() {
-            // Render Tasks
             const taskList = document.getElementById('info-tasks-list');
             taskList.innerHTML = '';
             state.tasks.forEach(t => {
@@ -611,7 +641,6 @@
                     </div>`;
             });
 
-            // Render Goals per Kid
             const goalsList = document.getElementById('info-goals-list');
             goalsList.innerHTML = '';
             state.kids.forEach(k => {
@@ -664,7 +693,6 @@
 
         // --- SETTINGS / CONFIG ---
         function openConfig() {
-            // Render Kids Config
             const kidsFields = document.getElementById('config-kids-fields');
             kidsFields.innerHTML = state.kids.map(k => `
                 <div style="margin-bottom:20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05);">
@@ -698,7 +726,6 @@
         }
 
         function addNewTaskInput() {
-            // Speichere zuerst den aktuellen Input-Stand
             saveTasksStateFromInputs();
             state.tasks.push({ id: Date.now(), name: '', points: 1 });
             renderTasksConfig();
@@ -720,18 +747,16 @@
         }
 
         function saveConfig() {
-            // Save Kids
             state.kids.forEach(k => { 
                 k.name = document.getElementById(`n-${k.id}`).value;
                 k.sGoal = document.getElementById(`s-${k.id}`).value; 
                 k.bGoal = document.getElementById(`b-${k.id}`).value; 
             });
-            // Save Tasks
             saveTasksStateFromInputs();
-            // Filter leere Aufgaben raus
             state.tasks = state.tasks.filter(t => t.name.trim() !== "");
 
             closeConfig(); 
+            render();
             syncToCloud();
         }
         
@@ -743,7 +768,12 @@
             const grid = document.getElementById('icon-grid'); grid.innerHTML = '';
             availableIcons.forEach(i => {
                 const b = document.createElement('button'); b.className = 'icon-choice'; b.innerText = i;
-                b.onclick = () => { state.kids.find(k=>k.id===activeKidForIcon).icon = i; syncToCloud(); closeModal('icon-modal'); };
+                b.onclick = () => { 
+                    state.kids.find(k=>k.id===activeKidForIcon).icon = i; 
+                    render();
+                    syncToCloud(); 
+                    closeModal('icon-modal'); 
+                };
                 grid.appendChild(b);
             });
             openModal('icon-modal');
@@ -761,6 +791,7 @@
             pad.appendChild(b);
         });
 
+        // Startpunkt
         window.onload = initSync;
     </script>
 </body>
