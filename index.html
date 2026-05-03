@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v3.0</title>
+    <title>Kids Star Tracker Pro v3.1</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -254,7 +254,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v3.0</span>
+                <span>v3.1</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
             <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
@@ -331,7 +331,8 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
         import { getFirestore, doc, setDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-        const DEFAULT_CONFIG = {
+        // Deine Datenbank-Konfiguration
+        const MY_CONFIG = {
             apiKey: "AIzaSyBmhtGvkbvFmA7gOX02kW7ZWCA3VrEPQS0",
             authDomain: "belohnung-6be28.firebaseapp.com",
             projectId: "belohnung-6be28",
@@ -374,14 +375,8 @@
 
         async function initSync() {
             setStatus('connecting');
-            let config;
-            try {
-                config = (typeof __firebase_config !== 'undefined' && __firebase_config) ? JSON.parse(__firebase_config) : DEFAULT_CONFIG;
-            } catch (e) {
-                config = DEFAULT_CONFIG;
-            }
-
-            const appId = typeof __app_id !== 'undefined' ? __app_id : (config.projectId || 'belohnung-6be28');
+            const config = (typeof __firebase_config !== 'undefined' && __firebase_config) ? JSON.parse(__firebase_config) : MY_CONFIG;
+            const appId = typeof __app_id !== 'undefined' ? __app_id : config.projectId;
             
             try {
                 const app = initializeApp(config);
@@ -402,7 +397,7 @@
                     user = u;
                     if (user && !firebaseReady) {
                         firebaseReady = true;
-                        // Path rule: /artifacts/{appId}/public/data/sync/state
+                        // Pfad: /artifacts/{appId}/public/data/sync/state
                         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
                         
                         onSnapshot(docRef, (docSnap) => {
@@ -417,7 +412,7 @@
                                 render();
                             }
                         }, (err) => {
-                            console.error("Firestore Snapshot Error:", err);
+                            console.error("Firestore Error:", err);
                             setStatus('offline');
                             document.getElementById('loading-screen').style.display = 'none';
                             render();
@@ -435,12 +430,12 @@
 
         async function syncToCloud() {
             if (!firebaseReady || !user) return;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : 'belohnung-6be28';
+            const appId = typeof __app_id !== 'undefined' ? __app_id : MY_CONFIG.projectId;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
                 await setDoc(docRef, state);
             } catch (e) {
-                console.error("Sync Update Error:", e);
+                console.error("Sync Save Error:", e);
                 setStatus('offline');
             }
         }
@@ -452,7 +447,7 @@
                 const step = k.valSmall || 10;
                 const count = Math.round(k.count * 10) / 10;
                 const currentTens = Math.floor(count / step);
-                const rem = Math.round((count % step) * 10) / 10; // Fixed: Defined at top of loop
+                const rem = Math.round((count % step) * 10) / 10; // Fixed: Defined at top
                 
                 const progSmall = Math.min(100, (rem / step) * 100);
                 const progBig = Math.min(100, (count / (k.valBig || 100)) * 100);
