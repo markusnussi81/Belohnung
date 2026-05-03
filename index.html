@@ -376,7 +376,6 @@
         const UNLOCK_DURATION = 3 * 60 * 1000; 
         
         // --- Caching System für PWA (iOS Home-Screen) ---
-        // Speichert die Cloud-Verbindungsdaten lokal, damit sie auch im Vollbildmodus erhalten bleiben
         let firebaseConfigStr = null;
         if (typeof __firebase_config !== 'undefined' && __firebase_config) {
             firebaseConfigStr = __firebase_config;
@@ -401,41 +400,12 @@
             authToken = localStorage.getItem('pwa_auth_token');
         }
 
-        // Globale Firebase Variablen
-        let auth = null;
-        let db = null;
-        let firebaseReady = false;
-
-        try {
-            if (firebaseConfigStr) {
-                const configObj = JSON.parse(firebaseConfigStr);
-                firebase.initializeApp(configObj);
-                auth = firebase.auth();
-                db = firebase.firestore();
-                
-                // Offline Persistenz aktivieren (macht die App resistent gegen Verbindungsabbrüche)
-                db.enablePersistence().catch(function(err) {
-                    console.log("Offline-Persistenz Warnung:", err);
-                });
-                
-                firebaseReady = true;
-            } else {
-                console.warn("Keine Firebase Config gefunden (weder injiziert noch im Cache).");
-            }
-        } catch (e) {
-            console.error("Firebase Setup Error:", e);
-        }
-
-        let lastUnlockTime = 0;
-        let currentPin = "";
-        let pendingAction = null;
-        let activeKidForIcon = null;
-        let activeKidForPoints = null;
-
-        const dbPath = `artifacts/${appId}/public/data/cloud_sync/state`;
-
-        // Default state
-        let state = {
+        // --- LOKALER ZWISCHENSPEICHER (verhindert Punkte-Reset beim Start) ---
+        const LOCAL_STORAGE_KEY = 'star_tracker_local_state_' + appId;
+        const savedLocalState = localStorage.getItem(LOCAL_STORAGE_KEY);
+        
+        // Default state (lädt das Backup, wenn vorhanden!)
+        let state = savedLocalState ? JSON.parse(savedLocalState) : {
             kids: [
                 { id: 0, name: 'Noelle', icon: '🦄', sGoal: 'Eis essen', bGoal: 'Disneyland', count: 0 },
                 { id: 1, name: 'Levi', icon: '🚀', sGoal: 'Lego Set', bGoal: 'Abenteuerpark', count: 0 }
@@ -448,7 +418,37 @@
             ]
         };
 
-        const availableIcons = ['🦄', '🚀', '🦖', '🐱', '🐶', '🦁', '🦊', '🦉', '⭐', '🌈', '🎮', '⚽', '🎨', '🍦', '🍕', '💎', '🚜', '🦒'];
+        // Globale Firebase Variablen
+        let auth = null;
+        let db = null;
+        let firebaseReady = false;
+
+        try {
+            if (firebaseConfigStr) {
+                const configObj = JSON.parse(firebaseConfigStr);
+                firebase.initializeApp(configObj);
+                auth = firebase.auth();
+                db = firebase.firestore();
+                
+                db.enablePersistence().catch(function(err) {
+                    console.log("Offline-Persistenz Warnung:", err);
+                });
+                
+                firebaseReady = true;
+            } else {
+                console.warn("Keine Firebase Config gefunden.");
+            }
+        } catch (e) {
+            console.error("Firebase Setup Error:", e);
+        }
+
+        let lastUnlockTime = 0;
+        let currentPin = "";
+        let pendingAction = null;
+        let activeKidForIcon = null;
+        let activeKidForPoints = null;
+
+        const dbPath = `artifacts/${appId}/public/data/cloud_sync/state`;
 
         // UI HELPERS
         function showMessage(text) {
@@ -489,7 +489,7 @@
                 hideLoadingScreen();
                 document.getElementById('status-dot').className = 'dot-status';
                 document.getElementById('status-text').innerText = 'Offline (Bitte zuerst in Safari laden)';
-                render();
+                render(); // Rendert Backup-State
                 return;
             }
 
@@ -511,8 +511,13 @@
                         const data = doc.data();
                         state.kids = data.kids || state.kids;
                         state.tasks = data.tasks || state.tasks;
+                        
+                        // Speichere die geladenen Cloud-Daten lokal als festes Backup
+                        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
                         render();
                     } else {
+                        // Wenn noch kein Cloud-Dokument existiert (z.B. nach Reset), 
+                        // lade den aktuellen (lokalen) State hoch!
                         docRef.set(state);
                         render();
                     }
@@ -521,7 +526,7 @@
                     hideLoadingScreen();
                     document.getElementById('status-dot').className = 'dot-status';
                     document.getElementById('status-text').innerText = 'Offline (Warte auf Sync)';
-                    render(); // Render local if cloud temporarily fails
+                    render(); 
                 });
 
             } catch (e) {
@@ -534,12 +539,15 @@
         }
 
         async function syncToCloud() {
+            // BACKUP: Speichere JEDE Änderung sofort lokal auf dem Gerät ab!
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(state));
+
             if (!firebaseReady || !auth.currentUser) return;
             try { 
                 await db.doc(dbPath).set(state); 
             } catch (e) { 
                 console.error("Sync Error", e); 
-                showMessage("Wird im Hintergrund synchronisiert..."); 
+                showMessage("Gespeichert (wird synchronisiert, wenn online)"); 
             }
         }
 
@@ -651,8 +659,8 @@
                 triggerConfetti();
             }
             
-            render(); // SOFORTIGES Update für den Nutzer (verhindert Wartezeiten)
-            syncToCloud(); // Speichert asynchron im Hintergrund
+            render(); 
+            syncToCloud(); 
         }
 
         function resetKid(id) {
@@ -808,6 +816,7 @@
         function openIconPicker(id) {
             activeKidForIcon = id;
             const grid = document.getElementById('icon-grid'); grid.innerHTML = '';
+            const availableIcons = ['🦄', '🚀', '🦖', '🐱', '🐶', '🦁', '🦊', '🦉', '⭐', '🌈', '🎮', '⚽', '🎨', '🍦', '🍕', '💎', '🚜', '🦒'];
             availableIcons.forEach(i => {
                 const b = document.createElement('button'); b.className = 'icon-choice'; b.innerText = i;
                 b.onclick = () => { 
@@ -833,7 +842,8 @@
             pad.appendChild(b);
         });
 
-        // Startpunkt
+        // Startpunkt - Rendert sofort das lokale Backup, um Wartezeiten zu vermeiden
+        render(); 
         window.onload = initSync;
     </script>
 </body>
