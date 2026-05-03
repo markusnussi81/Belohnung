@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v2.2</title>
+    <title>Kids Star Tracker Pro v2.5</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js" crossorigin="anonymous"></script>
@@ -113,7 +113,7 @@
             backdrop-filter: blur(15px);
         }
 
-        .kid-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .kid-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
         .kid-info h2 { margin: 0; font-size: 2.2rem; font-weight: 800; line-height: 1.1; }
         
         .btn-kid-reset {
@@ -137,33 +137,13 @@
             border: 2px solid rgba(255,255,255,0.15);
             box-shadow: 0 10px 20px rgba(0,0,0,0.3);
             animation: float 4s ease-in-out infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 100px;
+            min-height: 100px;
         }
         @keyframes float { 0% { transform: translateY(0px) rotate(0deg); } 50% { transform: translateY(-8px) rotate(3deg); } 100% { transform: translateY(0px) rotate(0deg); } }
-
-        .goals-container { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
-        .goal-pill { 
-            display: flex; align-items: center; gap: 6px; padding: 5px 12px; 
-            border-radius: 18px; font-size: 0.85rem; font-weight: 700; 
-            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255,255,255,0.2);
-            backdrop-filter: blur(5px);
-        }
-        .small-goal { 
-            background: linear-gradient(135deg, rgba(244, 114, 182, 0.3), rgba(244, 114, 182, 0.6)); 
-            border-color: rgba(244, 114, 182, 0.5); 
-            color: #fff1f2; 
-        }
-        .big-goal { 
-            background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(251, 191, 36, 0.6)); 
-            border-color: rgba(251, 191, 36, 0.5); 
-            color: #fffbeb; 
-        }
-        .mega-goal { 
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.3), rgba(168, 85, 247, 0.6)); 
-            border-color: rgba(168, 85, 247, 0.5); 
-            color: #faf5ff; 
-        }
 
         .tally-box {
             position: relative;
@@ -227,7 +207,8 @@
 
         .progress-section { margin-top: 25px; display: flex; flex-direction: column; gap: 12px; }
         .progress-item { width: 100%; }
-        .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; font-weight: 700; margin-bottom: 4px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #cbd5e1; font-weight: 700; margin-bottom: 4px; gap: 10px; }
+        .progress-label span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .progress-bg { background: rgba(0,0,0,0.5); height: 16px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
         .progress-fill { 
             height: 100%; transition: width 0.8s ease; 
@@ -281,6 +262,29 @@
         .dot { width: 20px; height: 20px; border: 2px solid #64748b; border-radius: 50%; }
         .dot.filled { background: var(--blue); border-color: var(--blue); box-shadow: 0 0 10px var(--blue); }
 
+        .icon-grid { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 12px; 
+            padding: 10px 0; 
+        }
+        .icon-choice { 
+            font-size: 3.5rem; 
+            background: rgba(255,255,255,0.05); 
+            border: 2px solid rgba(255,255,255,0.1); 
+            border-radius: 20px; 
+            padding: 5px; 
+            cursor: pointer; 
+            transition: all 0.2s; 
+            width: 100%; 
+            aspect-ratio: 1 / 1; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        .icon-choice:active { transform: scale(0.9); background: rgba(56, 189, 248, 0.2); border-color: var(--blue); }
+
         #loading-screen { position: fixed; inset: 0; background: var(--bg-gradient); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .spinner { width: 60px; height: 60px; border: 6px solid rgba(56, 189, 248, 0.2); border-top-color: var(--blue); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -299,7 +303,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v2.2</span>
+                <span>v2.5</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
             <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
@@ -362,7 +366,7 @@
 
     <div id="history-modal" class="modal"><div class="modal-content-scroll"><button class="btn-close-top" onclick="closeModal('history-modal')">X</button><h2>📜 Historie</h2><div id="history-list"></div></div></div>
     <div id="info-modal" class="modal"><div class="modal-content-scroll"><button class="btn-close-top" onclick="closeModal('info-modal')">X</button><h2>📋 Ziele & Aufgaben</h2><div id="info-goals-list"></div><br><div id="info-tasks-list" class="tasks-grid"></div></div></div>
-    <div id="icon-modal" class="modal"><div class="modal-content-scroll"><h2>Wähle ein Icon</h2><div id="icon-grid" class="icon-grid"></div></div></div>
+    <div id="icon-modal" class="modal"><div class="modal-content-scroll" style="max-width: 500px;"><button class="btn-close-top" onclick="closeModal('icon-modal')">X</button><h2 style="text-align: center; color: var(--blue);">Wähle ein Icon</h2><div id="icon-grid" class="icon-grid"></div></div></div>
 
     <script>
         // CONFIG
@@ -507,11 +511,7 @@
                 container.innerHTML += `
                     <div class="kid-card">
                         <div class="kid-header"><h2>${k.name}</h2><button class="btn-kid-reset" onclick="checkPin(()=>resetKid(${k.id}))">↺ Reset</button></div>
-                        <div class="goals-container">
-                            <div class="goal-pill small-goal"><span>🎁 ${k.valSmall}:</span> <span>${k.sGoal}</span></div>
-                            <div class="goal-pill big-goal"><span>🏆 ${k.valBig}:</span> <span>${k.bGoal}</span></div>
-                            <div class="goal-pill mega-goal"><span>💎 ${k.valMega}:</span> <span>${k.megaGoal}</span></div>
-                        </div>
+                        
                         <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;">
                              <div class="avatar-btn" onclick="openIconPicker(${k.id})">${k.icon}</div>
                              <div class="tally-box" style="flex:1;margin-bottom:0;">${tallyHtml}</div>
@@ -523,15 +523,15 @@
                         
                         <div class="progress-section">
                             <div class="progress-item">
-                                <div class="progress-label"><span>Nächste Belohnung 🎁</span><span>${Math.round((count % step)*10)/10} / ${step}</span></div>
+                                <div class="progress-label"><span>🎁 ${k.valSmall}: ${k.sGoal}</span><span>${Math.round((count % step)*10)/10} / ${step}</span></div>
                                 <div class="progress-bg"><div class="progress-fill fill-small" style="width:${progSmall}%"></div></div>
                             </div>
                             <div class="progress-item">
-                                <div class="progress-label"><span>Großes Ziel 🏆</span><span>${Math.round(count)} / ${big}</span></div>
+                                <div class="progress-label"><span>🏆 ${k.valBig}: ${k.bGoal}</span><span>${Math.round(count)} / ${big}</span></div>
                                 <div class="progress-bg"><div class="progress-fill fill-big" style="width:${progBig}%"></div></div>
                             </div>
                             <div class="progress-item">
-                                <div class="progress-label"><span>Mega Ziel 💎</span><span>${Math.round(count)} / ${mega}</span></div>
+                                <div class="progress-label"><span>💎 ${k.valMega}: ${k.megaGoal}</span><span>${Math.round(count)} / ${mega}</span></div>
                                 <div class="progress-bg"><div class="progress-fill fill-mega" style="width:${progMega}%"></div></div>
                             </div>
                         </div>
@@ -542,7 +542,8 @@
         function openAddPointsModal(kidId) {
             activeKidForPoints = kidId;
             const l = document.getElementById('add-tasks-list');
-            l.innerHTML = state.tasks.map(t => `
+            const sortedTasks = [...state.tasks].sort((a, b) => a.name.localeCompare(b.name));
+            l.innerHTML = sortedTasks.map(t => `
                 <div class="task-btn-item" onclick="addPoints(${t.points}, '${t.name.replace(/'/g, "\\'")}')">
                     <span class="task-btn-name">${t.name}</span>
                     <span class="task-btn-points">+ ${t.points} ⭐</span>
@@ -550,11 +551,22 @@
             openModal('add-points-modal');
         }
 
-        function addPoints(v, n) { updateCount(activeKidForPoints, v, n); closeModal('add-points-modal'); }
+        function addPoints(v, n) { 
+            updateCount(activeKidForPoints, v, n); 
+            closeModal('add-points-modal'); 
+            showMessage(`Gute Arbeit! ${n} wurde gebucht. ⭐`);
+        }
+        
         function addCustomPoints() {
             const n = document.getElementById('custom-task-name').value.trim() || 'Manuell';
             const v = parseFloat(document.getElementById('custom-task-pts').value);
-            if (!isNaN(v)) { addPoints(v, n); document.getElementById('custom-task-name').value=''; document.getElementById('custom-task-pts').value=''; }
+            if (!isNaN(v)) { 
+                updateCount(activeKidForPoints, v, n); 
+                closeModal('add-points-modal');
+                showMessage(`Manuelle Buchung: ${n} (+${v} ⭐)`);
+                document.getElementById('custom-task-name').value=''; 
+                document.getElementById('custom-task-pts').value=''; 
+            }
         }
 
         function openConfig() {
@@ -616,11 +628,26 @@
 
         function openTasksInfoModal() {
             document.getElementById('info-goals-list').innerHTML = state.kids.map(k => `<div class="config-card"><b>${k.name}</b><br>${k.valSmall}er: ${k.sGoal}<br>${k.valBig}er: ${k.bGoal}<br>${k.valMega}er: ${k.megaGoal}</div>`).join('');
-            document.getElementById('info-tasks-list').innerHTML = state.tasks.map(t => `<div class="task-btn-item"><span>${t.name}</span><span class="task-btn-points">${t.points}</span></div>`).join('');
+            const sortedTasks = [...state.tasks].sort((a, b) => a.name.localeCompare(b.name));
+            document.getElementById('info-tasks-list').innerHTML = sortedTasks.map(t => `<div class="task-btn-item"><span>${t.name}</span><span class="task-btn-points">${t.points}</span></div>`).join('');
             openModal('info-modal');
         }
 
-        function openIconPicker(id) { activeKidForIcon = id; const icons = ['🦄','🚀','🦖','🐱','🐶','🦁','🦊','🦉','⭐','🌈','🎮','⚽','🎨','🎸','🛹','🚴','🦸','👑','🍕','🍔','🎈','🍭']; document.getElementById('icon-grid').innerHTML = icons.map(i => `<button class="icon-choice" onclick="selectIcon('${i}')">${i}</button>`).join(''); openModal('icon-modal'); }
+        function openIconPicker(id) { 
+            activeKidForIcon = id; 
+            const icons = [
+                // Tiere & Kreaturen
+                '🦄','🚀','🦖','🐉','🐶','🐱','🐭','🐰','🦁','🐼','🐻','🐨','🦊','🐮','🐵','🐸','🦋','🐞','🐝','🐢','🐬','🐳','🦁','🐆',
+                // Fantasy & Cool
+                '🦸','🦹','🧙','🧚','👑','💎','🧨','💣','⚡','🔥','🌈','🪐','🔭','🛸',
+                // Sport & Spiele
+                '⚽','🏀','🎾','🏉','🥊','⛸️','🏄','🚴','🎮','🕹️','🎨','🎸','🥁','🛹',
+                // Essen & Spaß
+                '🍦','🍔','🍕','🍟','🍭','🍬','🍩','🎈','🍭',' popcorn','🥤'
+            ]; 
+            document.getElementById('icon-grid').innerHTML = icons.map(i => `<button class="icon-choice" onclick="selectIcon('${i}')">${i}</button>`).join(''); 
+            openModal('icon-modal'); 
+        }
         function selectIcon(i) { state.kids.find(k => k.id === activeKidForIcon).icon = i; render(); syncToCloud(); closeModal('icon-modal'); }
 
         function checkPin(a) { if (Date.now() - lastUnlockTime < UNLOCK_DURATION) a(); else { pendingAction = a; currentPin = ""; updatePinDots(); openModal('pin-modal'); } }
