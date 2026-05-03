@@ -11,7 +11,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v2.7</title>
+    <title>Kids Star Tracker Pro v2.8</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-auth-compat.js" crossorigin="anonymous"></script>
@@ -312,7 +312,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v2.7</span>
+                <span>v2.8</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
             <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
@@ -431,40 +431,72 @@
 
         async function initSync() {
             setStatus('connecting');
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
+            
+            let firebaseConfig;
+            try {
+                if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                    firebaseConfig = JSON.parse(__firebase_config);
+                } else {
+                    firebaseConfig = DEFAULT_FIREBASE_CONFIG;
+                }
+            } catch (e) {
+                firebaseConfig = DEFAULT_FIREBASE_CONFIG;
+            }
+
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                console.error("Firebase config is invalid.");
+                setStatus('offline');
+                document.getElementById('loading-screen').style.display = 'none';
+                render();
+                return;
+            }
+
+            const currentAppId = typeof __app_id !== 'undefined' ? __app_id : (firebaseConfig.projectId || 'belohnung-6be28');
 
             try {
-                const app = firebase.initializeApp(firebaseConfig);
-                auth = firebase.auth();
-                db = firebase.firestore();
+                // Initialize Firebase App instance correctly
+                const app = !firebase.apps.length ? firebase.initializeApp(firebaseConfig) : firebase.app();
+                auth = app.auth();
+                db = app.firestore();
 
+                // Rule 3: Wait for Auth before running Firestore queries
                 const initAuth = async () => {
                     if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                         await auth.signInWithCustomToken(__initial_auth_token);
                     } else {
-                        await auth.signInAnonymously().catch(e => console.warn("Anonymous Auth Disabled:", e));
+                        await auth.signInAnonymously().catch(e => console.warn("Anonymous Auth Disabled or failed:", e));
                     }
                 };
 
                 await initAuth();
                 firebaseReady = true;
 
-                const dbPath = `artifacts/${appId}/public/data/cloud_sync/state`;
-                db.doc(dbPath).onSnapshot(doc => {
+                // Rule 1: Strict collection structure
+                const docRef = db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('sync').doc('state');
+
+                docRef.onSnapshot(doc => {
                     document.getElementById('loading-screen').style.display = 'none';
                     setStatus('online');
                     if (doc.exists) {
                         state = doc.data();
-                        state.kids.forEach(k => { if(!k.valSmall){ k.valSmall=10; k.valBig=100; k.valMega=300; } });
+                        // Migration & Safety
+                        if(!state.history) state.history = [];
+                        state.kids.forEach(k => { 
+                            if(!k.valSmall){ k.valSmall=10; k.valBig=100; k.valMega=300; } 
+                        });
                         render();
                     } else {
-                        db.doc(dbPath).set(state);
+                        docRef.set(state);
                         render();
                     }
-                }, err => { console.error("Firestore Listen Error:", err); setStatus('offline'); });
+                }, err => { 
+                    console.error("Firestore Listen Error:", err); 
+                    setStatus('offline');
+                    document.getElementById('loading-screen').style.display = 'none';
+                    render();
+                });
             } catch (e) { 
-                console.error("Firebase Init Error:", e); 
+                console.error("Firebase Init Sequence Error:", e); 
                 setStatus('offline'); 
                 document.getElementById('loading-screen').style.display = 'none'; 
                 render(); 
@@ -472,11 +504,15 @@
         }
 
         async function syncToCloud() {
-            if (!firebaseReady || !auth.currentUser) return;
-            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : DEFAULT_FIREBASE_CONFIG;
-            const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.projectId;
-            const dbPath = `artifacts/${appId}/public/data/cloud_sync/state`;
-            try { await db.doc(dbPath).set(state); } catch (e) { console.error("Sync Error:", e); setStatus('offline'); }
+            if (!firebaseReady || !auth || !auth.currentUser) return;
+            const currentAppId = typeof __app_id !== 'undefined' ? __app_id : 'belohnung-6be28';
+            try {
+                const docRef = db.collection('artifacts').doc(currentAppId).collection('public').doc('data').collection('sync').doc('state');
+                await docRef.set(state);
+            } catch (e) { 
+                console.error("Sync Error:", e); 
+                setStatus('offline'); 
+            }
         }
 
         function updateCount(id, v, taskName) {
@@ -486,9 +522,7 @@
             k.count = Math.max(0, Math.round((k.count + v) * 10) / 10);
             if (v > 0 && Math.floor(k.count / step) > oldTens) confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 } });
             
-            // Neuer History Eintrag mit Datumsstempel
             state.history.push({ kidName: k.name, points: v, taskName, timestamp: Date.now() });
-            
             if (state.history.length > 200) state.history.shift(); 
             render(); syncToCloud();
         }
@@ -502,7 +536,7 @@
         function clearHistory() {
             state.history = [];
             syncToCloud();
-            openHistoryModal(); // Refresh view
+            openHistoryModal(); 
             showMessage("Historie wurde gelöscht! 🗑️");
         }
 
@@ -679,13 +713,9 @@
         function openIconPicker(id) { 
             activeKidForIcon = id; 
             const icons = [
-                // Tiere & Kreaturen
                 '🦄','🚀','🦖','🐉','🐶','🐱','🐭','🐰','🦁','🐼','🐻','🐨','🦊','🐮','🐵','🐸','🦋','🐞','🐝','🐢','🐬','🐳','🐆',
-                // Fantasy & Cool
                 '🦸','🦹','🧙','🧚','👑','💎','🧨','💣','⚡','🔥','🌈','🪐','🔭','🛸',
-                // Sport & Spiele
                 '⚽','🏀','🎾','🏉','🥊','⛸️','🏄','🚴','🎮','🕹️','🎨','🎸','🥁','🛹',
-                // Essen & Spaß
                 '🍦','🍔','🍕','🍟','🍭','🍬','🍩','🎈','🍿','🥤'
             ]; 
             document.getElementById('icon-grid').innerHTML = icons.map(i => `<button class="icon-choice" onclick="selectIcon('${i}')">${i}</button>`).join(''); 
