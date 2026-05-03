@@ -77,22 +77,6 @@
             font-weight: 800;
         }
 
-        #sync-status { 
-            font-size: 0.8rem; 
-            text-transform: uppercase;
-            margin-top: 5px;
-            opacity: 0.9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            font-weight: 600;
-        }
-        .dot-status { width: 10px; height: 10px; border-radius: 50%; background: #64748b; }
-        .dot-online { background: var(--success); box-shadow: 0 0 10px var(--success); animation: pulseDot 2s infinite; }
-
-        @keyframes pulseDot { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
-
         #unlock-status { font-size: 1rem; color: var(--gold); margin-top: 5px; font-weight: bold; height: 20px; }
 
         .btn-info {
@@ -283,10 +267,7 @@
     <div id="app">
         <header>
             <h1>STAR TRACKER</h1>
-            <div id="sync-status">
-                <div class="dot-status" id="status-dot"></div>
-                <span id="status-text">Verbinde...</span>
-            </div>
+            <div style="font-size: 0.9rem; color: #94a3b8; font-weight: bold; margin-top: 5px; letter-spacing: 1px;">v1.2</div>
             <div id="unlock-status"></div>
             <!-- Info Button (Ohne PIN) -->
             <button class="btn-info" onclick="openTasksInfoModal()">📋 Aufgaben & Belohnungen ansehen</button>
@@ -487,8 +468,6 @@
         async function initSync() {
             if (!firebaseReady) {
                 hideLoadingScreen();
-                document.getElementById('status-dot').className = 'dot-status';
-                document.getElementById('status-text').innerText = 'Offline (Bitte zuerst in Safari laden)';
                 render(); // Rendert Backup-State
                 return;
             }
@@ -504,8 +483,6 @@
 
                 docRef.onSnapshot((doc) => {
                     hideLoadingScreen();
-                    document.getElementById('status-dot').className = 'dot-status dot-online';
-                    document.getElementById('status-text').innerText = 'Cloud Verbunden';
 
                     if (doc.exists) {
                         const data = doc.data();
@@ -524,16 +501,12 @@
                 }, (error) => {
                     console.error("Firestore Error:", error);
                     hideLoadingScreen();
-                    document.getElementById('status-dot').className = 'dot-status';
-                    document.getElementById('status-text').innerText = 'Offline (Warte auf Sync)';
                     render(); 
                 });
 
             } catch (e) {
                 console.error("Auth error", e);
                 hideLoadingScreen();
-                document.getElementById('status-dot').className = 'dot-status';
-                document.getElementById('status-text').innerText = 'Offline Modus';
                 render(); 
             }
         }
