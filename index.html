@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <!-- App/Vollbild Meta-Tags für iOS (iPad/iPhone) und Android -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Star Tracker">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1e1b4b">
+    
     <title>Kids Star Tracker Pro (Cloud Sync)</title>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/11.6.1/firebase-app-compat.js"></script>
@@ -37,7 +45,8 @@
 
         body {
             margin: 0;
-            padding: 20px;
+            /* Extra Padding für neuere iPhones/iPads mit Notch oder Home-Indikator */
+            padding: env(safe-area-inset-top) 20px env(safe-area-inset-bottom) 20px;
             background: var(--bg-gradient);
             color: var(--text);
             font-family: 'Baloo 2', cursive, sans-serif;
@@ -56,7 +65,7 @@
             padding-bottom: 120px;
         }
 
-        header { text-align: center; padding: 5px 0 10px 0; }
+        header { text-align: center; padding: 15px 0 10px 0; }
         h1 { 
             font-size: 2.8rem; 
             margin: 0; 
@@ -208,6 +217,7 @@
             position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 450px;
             background: rgba(30, 41, 59, 0.95); backdrop-filter: blur(15px); padding: 15px; border-radius: 40px;
             display: flex; justify-content: center; border: 2px solid rgba(255,255,255,0.15); z-index: 50; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .modal {
@@ -364,20 +374,53 @@
         // CONFIG & STATE
         const PIN = "8458";
         const UNLOCK_DURATION = 3 * 60 * 1000; 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'kids-star-tracker-pro';
         
-        // Globale Firebase Variablen (sicher initialisieren)
+        // --- Caching System für PWA (iOS Home-Screen) ---
+        // Speichert die Cloud-Verbindungsdaten lokal, damit sie auch im Vollbildmodus erhalten bleiben
+        let firebaseConfigStr = null;
+        if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+            firebaseConfigStr = __firebase_config;
+            localStorage.setItem('pwa_fb_config', firebaseConfigStr);
+        } else {
+            firebaseConfigStr = localStorage.getItem('pwa_fb_config');
+        }
+
+        let appId = 'kids-star-tracker-pro';
+        if (typeof __app_id !== 'undefined' && __app_id) {
+            appId = __app_id;
+            localStorage.setItem('pwa_app_id', appId);
+        } else {
+            appId = localStorage.getItem('pwa_app_id') || 'kids-star-tracker-pro';
+        }
+
+        let authToken = null;
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+            authToken = __initial_auth_token;
+            localStorage.setItem('pwa_auth_token', authToken);
+        } else {
+            authToken = localStorage.getItem('pwa_auth_token');
+        }
+
+        // Globale Firebase Variablen
         let auth = null;
         let db = null;
         let firebaseReady = false;
 
         try {
-            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
-                const firebaseConfig = JSON.parse(__firebase_config);
-                firebase.initializeApp(firebaseConfig);
+            if (firebaseConfigStr) {
+                const configObj = JSON.parse(firebaseConfigStr);
+                firebase.initializeApp(configObj);
                 auth = firebase.auth();
                 db = firebase.firestore();
+                
+                // Offline Persistenz aktivieren (macht die App resistent gegen Verbindungsabbrüche)
+                db.enablePersistence().catch(function(err) {
+                    console.log("Offline-Persistenz Warnung:", err);
+                });
+                
                 firebaseReady = true;
+            } else {
+                console.warn("Keine Firebase Config gefunden (weder injiziert noch im Cache).");
             }
         } catch (e) {
             console.error("Firebase Setup Error:", e);
@@ -442,18 +485,17 @@
 
         // FIREBASE SYNC
         async function initSync() {
-            // Wenn Firebase nicht existiert oder fehlerhaft ist, lade lokal!
             if (!firebaseReady) {
                 hideLoadingScreen();
                 document.getElementById('status-dot').className = 'dot-status';
-                document.getElementById('status-text').innerText = 'Offline Modus';
+                document.getElementById('status-text').innerText = 'Offline (Bitte zuerst in Safari laden)';
                 render();
                 return;
             }
 
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await auth.signInWithCustomToken(__initial_auth_token);
+                if (authToken) {
+                    await auth.signInWithCustomToken(authToken);
                 } else {
                     await auth.signInAnonymously();
                 }
@@ -478,8 +520,8 @@
                     console.error("Firestore Error:", error);
                     hideLoadingScreen();
                     document.getElementById('status-dot').className = 'dot-status';
-                    document.getElementById('status-text').innerText = 'Offline (Kein Sync)';
-                    render(); // Render local if cloud fails
+                    document.getElementById('status-text').innerText = 'Offline (Warte auf Sync)';
+                    render(); // Render local if cloud temporarily fails
                 });
 
             } catch (e) {
@@ -487,7 +529,7 @@
                 hideLoadingScreen();
                 document.getElementById('status-dot').className = 'dot-status';
                 document.getElementById('status-text').innerText = 'Offline Modus';
-                render(); // Render local if auth fails
+                render(); 
             }
         }
 
@@ -497,7 +539,7 @@
                 await db.doc(dbPath).set(state); 
             } catch (e) { 
                 console.error("Sync Error", e); 
-                showMessage("Speichern in Cloud fehlgeschlagen!"); 
+                showMessage("Wird im Hintergrund synchronisiert..."); 
             }
         }
 
