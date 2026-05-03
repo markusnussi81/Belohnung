@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v3.1</title>
+    <title>Kids Star Tracker Pro v3.2</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -254,7 +254,7 @@
         <header>
             <h1>STAR TRACKER</h1>
             <div class="version-bar">
-                <span>v3.1</span>
+                <span>v3.2</span>
                 <div id="status-dot" class="status-dot"></div>
             </div>
             <div id="unlock-status-container" style="min-height: 30px; margin-top: 5px;"></div>
@@ -375,50 +375,63 @@
 
         async function initSync() {
             setStatus('connecting');
-            const config = (typeof __firebase_config !== 'undefined' && __firebase_config) ? JSON.parse(__firebase_config) : MY_CONFIG;
+            const isSandbox = typeof __firebase_config !== 'undefined' && __firebase_config;
+            const config = isSandbox ? JSON.parse(__firebase_config) : MY_CONFIG;
             const appId = typeof __app_id !== 'undefined' ? __app_id : config.projectId;
             
             try {
                 const app = initializeApp(config);
-                auth = getAuth(app);
                 db = getFirestore(app);
 
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        return await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        return await signInAnonymously(auth);
-                    }
+                const startFirestore = () => {
+                    if (firebaseReady) return;
+                    firebaseReady = true;
+                    // Pfad: /artifacts/{appId}/public/data/sync/state
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
+                    
+                    onSnapshot(docRef, (docSnap) => {
+                        document.getElementById('loading-screen').style.display = 'none';
+                        setStatus('online');
+                        if (docSnap.exists()) {
+                            state = docSnap.data();
+                            if(!state.history) state.history = [];
+                            render();
+                        } else {
+                            setDoc(docRef, state);
+                            render();
+                        }
+                    }, (err) => {
+                        console.error("Firestore Error:", err);
+                        setStatus('offline');
+                        document.getElementById('loading-screen').style.display = 'none';
+                        render();
+                    });
                 };
 
-                await initAuth();
-                
-                onAuthStateChanged(auth, (u) => {
-                    user = u;
-                    if (user && !firebaseReady) {
-                        firebaseReady = true;
-                        // Pfad: /artifacts/{appId}/public/data/sync/state
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
-                        
-                        onSnapshot(docRef, (docSnap) => {
-                            document.getElementById('loading-screen').style.display = 'none';
-                            setStatus('online');
-                            if (docSnap.exists()) {
-                                state = docSnap.data();
-                                if(!state.history) state.history = [];
-                                render();
-                            } else {
-                                setDoc(docRef, state);
-                                render();
-                            }
-                        }, (err) => {
-                            console.error("Firestore Error:", err);
-                            setStatus('offline');
-                            document.getElementById('loading-screen').style.display = 'none';
-                            render();
-                        });
-                    }
-                });
+                // WENN WIR IN DER SANDBOX SIND (Auth zwingend erforderlich)
+                if (isSandbox) {
+                    auth = getAuth(app);
+                    const initAuth = async () => {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            return await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            return await signInAnonymously(auth);
+                        }
+                    };
+
+                    await initAuth().catch(e => console.warn("Auth Error:", e));
+                    
+                    onAuthStateChanged(auth, (u) => {
+                        user = u;
+                        if (user) {
+                            startFirestore();
+                        }
+                    });
+                } 
+                // WENN DU DIE APP AUF GITHUB HAST (Überspringt Auth komplett für Testmodus)
+                else {
+                    startFirestore();
+                }
 
             } catch (e) {
                 console.error("Firebase Init Error:", e);
@@ -429,7 +442,9 @@
         }
 
         async function syncToCloud() {
-            if (!firebaseReady || !user) return;
+            const isSandbox = typeof __firebase_config !== 'undefined' && __firebase_config;
+            if (!firebaseReady || (isSandbox && !user)) return;
+            
             const appId = typeof __app_id !== 'undefined' ? __app_id : MY_CONFIG.projectId;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
@@ -447,9 +462,9 @@
                 const step = k.valSmall || 10;
                 const count = Math.round(k.count * 10) / 10;
                 const currentTens = Math.floor(count / step);
-                const rem = Math.round((count % step) * 10) / 10; // Fixed: Defined at top
+                const remTime = Math.round((count % step) * 10) / 10; // Variable is safely defined here
                 
-                const progSmall = Math.min(100, (rem / step) * 100);
+                const progSmall = Math.min(100, (remTime / step) * 100);
                 const progBig = Math.min(100, (count / (k.valBig || 100)) * 100);
                 const progMega = Math.min(100, (count / (k.valMega || 300)) * 100);
                 
@@ -458,12 +473,12 @@
                     for(let i=0;i<step;i++) tallyHtml += '<div class="star-icon" style="opacity:1;transform:scale(1)">⭐</div>';
                     tallyHtml += `<div class="celebration-overlay" onclick="window.acknowledgeTen(${k.id})"><div class="c-icon">🎁</div><div class="c-text">Geschafft!</div></div>`;
                 } else {
-                    if (rem === 0) {
+                    if (remTime === 0) {
                         tallyHtml = '<span style="color:rgba(255,255,255,0.4)">Noch 0 Sterne...</span>';
                     } else {
-                        for(let i=0; i<Math.floor(rem); i++) tallyHtml += '<div class="star-icon">⭐</div>';
-                        if(rem % 1 !== 0) tallyHtml += '<div class="star-icon" style="opacity:0.6;font-size:1.5rem">🌟</div>';
-                        tallyHtml += `<div style="width:100%;text-align:center;color:var(--gold);font-weight:800;font-size:0.8rem;">${rem} / ${step}</div>`;
+                        for(let i=0; i<Math.floor(remTime); i++) tallyHtml += '<div class="star-icon">⭐</div>';
+                        if(remTime % 1 !== 0) tallyHtml += '<div class="star-icon" style="opacity:0.6;font-size:1.5rem">🌟</div>';
+                        tallyHtml += `<div style="width:100%;text-align:center;color:var(--gold);font-weight:800;font-size:0.8rem;">${remTime} / ${step}</div>`;
                     }
                 }
 
@@ -479,7 +494,7 @@
                             <button class="btn-action btn-plus" onclick="window.checkPin(()=>window.openAddPointsModal(${k.id}))">+</button>
                         </div>
                         <div class="progress-section">
-                            <div class="progress-item"><div class="progress-label"><span>🎁 ${step}: ${k.sGoal}</span><span>${rem} / ${step}</span></div><div class="progress-bg"><div class="progress-fill fill-small" style="width:${progSmall}%"></div></div></div>
+                            <div class="progress-item"><div class="progress-label"><span>🎁 ${step}: ${k.sGoal}</span><span>${remTime} / ${step}</span></div><div class="progress-bg"><div class="progress-fill fill-small" style="width:${progSmall}%"></div></div></div>
                             <div class="progress-item"><div class="progress-label"><span>🏆 ${k.valBig || 100}: ${k.bGoal}</span><span>${Math.round(count)} / ${k.valBig || 100}</span></div><div class="progress-bg"><div class="progress-fill fill-big" style="width:${progBig}%"></div></div></div>
                             <div class="progress-item"><div class="progress-label"><span>💎 ${k.valMega || 300}: ${k.megaGoal}</span><span>${Math.round(count)} / ${k.valMega || 300}</span></div><div class="progress-bg"><div class="progress-fill fill-mega" style="width:${progMega}%"></div></div></div>
                         </div>
@@ -598,9 +613,9 @@
 
         function updateUnlockDisplay() {
             const container = document.getElementById('unlock-status-container');
-            const remTime = UNLOCK_DURATION - (Date.now() - lastUnlockTime);
-            if (remTime > 0) {
-                container.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span style="color:var(--gold);font-weight:bold;">🔓 OFFEN (${Math.ceil(remTime/1000)}s)</span><button onclick="window.manualLock()" style="background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;padding:2px 8px;border-radius:10px;">Sperren</button></div>`;
+            const rTime = UNLOCK_DURATION - (Date.now() - lastUnlockTime);
+            if (rTime > 0) {
+                container.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span style="color:var(--gold);font-weight:bold;">🔓 OFFEN (${Math.ceil(rTime/1000)}s)</span><button onclick="window.manualLock()" style="background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;padding:2px 8px;border-radius:10px;">Sperren</button></div>`;
                 setTimeout(updateUnlockDisplay, 1000);
             } else { container.innerHTML = '<span style="color:#94a3b8;font-weight:bold;">🔒 GESPERRT</span>'; }
         }
