@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v3.8</title>
+    <title>Kids Star Tracker Pro v4.0</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -81,6 +81,24 @@
         @keyframes drift {
             0% { transform: translate(0, 0) rotate(0deg); }
             100% { transform: translate(-75px, -75px) rotate(3deg); }
+        }
+
+        /* Fliegende Emojis der Kinder im Hintergrund */
+        .flying-emoji {
+            position: fixed;
+            font-size: 3.5rem;
+            pointer-events: none;
+            z-index: 5; /* Hinter der App (10) aber über dem Hintergrund */
+            opacity: 0;
+            animation: flyEmoji linear forwards;
+            filter: drop-shadow(0 0 15px rgba(255,255,255,0.4));
+        }
+
+        @keyframes flyEmoji {
+            0% { transform: translate(var(--startX), var(--startY)) rotate(var(--startRot)) scale(0.5); opacity: 0; }
+            15% { opacity: 0.6; }
+            85% { opacity: 0.6; }
+            100% { transform: translate(var(--endX), var(--endY)) rotate(var(--endRot)) scale(1.3); opacity: 0; }
         }
 
         #app {
@@ -287,6 +305,8 @@
             background: var(--card-bg); width: 100%; max-width: 450px; max-height: 85vh; padding: 25px; 
             border-radius: 35px; border: 1px solid rgba(255,255,255,0.1); overflow-y: auto; position: relative;
             box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+            /* Verhindert horizontales Wackeln/Scrollbalken bei Animationen */
+            overflow-x: hidden;
             /* Animations-Startzustand */
             transform: scale(0.8) translateY(30px);
             opacity: 0;
@@ -305,20 +325,62 @@
         .btn-close-top:hover { background: rgba(255,255,255,0.2); transform: rotate(90deg); }
         .btn-close-top:active { transform: scale(0.9); }
 
-        .tasks-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .modal-large { max-width: 900px !important; width: 96% !important; max-height: 96vh !important; padding: 20px 15px !important; }
+
+        .tasks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(105px, 1fr)); gap: 8px; }
         .task-btn-item {
-            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); padding: 12px 10px; border-radius: 18px;
-            display: flex; flex-direction: column; align-items: center; text-align: center; cursor: pointer; gap: 6px; 
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); padding: 8px 4px; border-radius: 14px;
+            display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; cursor: pointer; gap: 4px; 
             transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            min-height: 75px;
         }
+        .task-btn-item span:first-child { font-size: 0.8rem; line-height: 1.1; display: flex; align-items: center; flex: 1; }
         .task-btn-item:hover { transform: scale(1.05) translateY(-2px); background: rgba(255,255,255,0.1); box-shadow: 0 8px 15px rgba(0,0,0,0.3); }
         .task-btn-item:active { transform: scale(0.95); background: rgba(255,255,255,0.2); }
-        .task-btn-points { background: var(--gold); color: #000; padding: 3px 10px; border-radius: 12px; font-weight: 800; font-size: 0.95rem; }
+        .task-btn-points { background: var(--gold); color: #000; padding: 2px 8px; border-radius: 10px; font-weight: 800; font-size: 0.85rem; margin-top: auto; }
 
         .edit-task-row { display: grid; grid-template-columns: 3fr 1fr 40px; gap: 10px; align-items: center; margin-bottom: 10px; }
         .config-card { margin-bottom: 20px; background: rgba(0,0,0,0.2); padding: 20px; border-radius: 25px; border: 1px solid rgba(255,255,255,0.05); }
         .config-card input { width: 100%; padding: 12px; margin: 5px 0 12px 0; background: rgba(0,0,0,0.4); border: 1px solid #475569; color: white; border-radius: 15px; font-family: 'Baloo 2'; font-weight: 600;}
         
+        /* Filter & Search Bar - VERPIELTES DESIGN */
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 20px; width: 100%; flex-wrap: wrap; }
+        
+        .filter-input { 
+            flex: 1; min-width: 120px; padding: 12px 20px; 
+            border-radius: 25px; border: 2px solid rgba(255,255,255,0.2); 
+            background: rgba(0,0,0,0.3); color: white; font-family: 'Baloo 2'; 
+            font-size: 1rem; font-weight: 600; outline: none; 
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.3);
+        }
+        .filter-input:focus { border-color: var(--blue); background: rgba(0,0,0,0.5); transform: scale(1.02); }
+        
+        .filter-select { 
+            appearance: none;
+            padding: 12px 40px 12px 20px; 
+            border-radius: 25px; border: 2px solid rgba(255,255,255,0.3); 
+            background: linear-gradient(135deg, var(--purple), var(--pink)); 
+            color: white; font-family: 'Baloo 2'; font-size: 1rem; font-weight: 800; 
+            cursor: pointer; outline: none; 
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23FFFFFF%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+            background-repeat: no-repeat;
+            background-position: right 15px top 50%;
+            background-size: 12px auto;
+        }
+        .filter-select:hover { transform: scale(1.05) rotate(2deg); box-shadow: 0 6px 20px rgba(168, 85, 247, 0.6); }
+        .filter-select:active { transform: scale(0.95); }
+        .filter-select option { background: #1e293b; color: white; font-family: 'Baloo 2'; font-weight: 600; }
+
+        /* Eigene, sanftere Animation für Listenelemente (verhindert Scrollbalken-Bug) */
+        @keyframes popItem {
+            0% { opacity: 0; transform: scale(0.8) translateY(15px); }
+            60% { opacity: 1; transform: scale(1.05) translateY(-5px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
         .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; width: 100%; max-width: 320px; margin-top: 15px; }
         .btn-key { background: rgba(255,255,255,0.05); color: white; height: 75px; font-size: 2rem; border-radius: 25px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; font-family: 'Baloo 2'; font-weight: 800; transition: transform 0.2s; }
         .btn-key:active { transform: scale(0.9) translateY(4px); background: rgba(255,255,255,0.15); }
@@ -356,7 +418,7 @@
             <div class="header-left">
                 <h1>STAR TRACKER</h1>
                 <div class="version-bar">
-                    <span>v3.9 MAGIC</span>
+                    <span>v4.0 MAGIC</span>
                     <div id="status-dot" class="status-dot"></div>
                     <div id="unlock-status-container" style="margin-left: 6px; display: flex; align-items: center;"></div>
                 </div>
@@ -381,7 +443,7 @@
     </div>
 
     <div id="add-points-modal" class="modal">
-        <div class="modal-content-scroll">
+        <div class="modal-content-scroll modal-large">
             <button class="btn-close-top" onclick="window.closeModal('add-points-modal')">X</button>
             <h2 id="add-points-title" style="text-align: center; color: var(--gold); font-size: 2rem; margin-top: 0;">Sterne vergeben</h2>
             <div style="display: flex; gap: 10px; margin-bottom: 20px;">
@@ -389,6 +451,16 @@
                 <input id="custom-task-pts" type="number" step="0.5" placeholder="Pts" style="width: 70px; padding: 12px; border-radius: 15px; border: 1px solid #475569; background: rgba(0,0,0,0.3); color: white; font-family: 'Baloo 2'; text-align: center;">
                 <button onclick="window.addCustomPoints()" style="background: var(--green); color: white; border: none; border-radius: 15px; padding: 0 15px; font-family: 'Baloo 2'; font-weight: bold; cursor: pointer; transition: transform 0.2s;">OK</button>
             </div>
+            
+            <div class="filter-bar">
+                <input type="text" id="add-task-search" class="filter-input" placeholder="🔍 Suchen..." oninput="window.updateTaskFilter('add')">
+                <select id="add-task-sort" class="filter-select" onchange="window.updateTaskFilter('add')">
+                    <option value="alpha">🔤 A-Z</option>
+                    <option value="points-desc">⭐ Höchste</option>
+                    <option value="points-asc">⭐ Niedrigste</option>
+                </select>
+            </div>
+
             <div id="add-tasks-list" class="tasks-grid"></div>
         </div>
     </div>
@@ -430,10 +502,20 @@
     </div>
     
     <div id="info-modal" class="modal">
-        <div class="modal-content-scroll">
+        <div class="modal-content-scroll modal-large">
             <button class="btn-close-top" onclick="window.closeModal('info-modal')">X</button>
             <h2 style="margin-top: 0; font-size: 2rem;">📋 Ziele & Aufgaben</h2>
             <div id="info-goals-list"></div><br>
+            
+            <div class="filter-bar">
+                <input type="text" id="info-task-search" class="filter-input" placeholder="🔍 Suchen..." oninput="window.updateTaskFilter('info')">
+                <select id="info-task-sort" class="filter-select" onchange="window.updateTaskFilter('info')">
+                    <option value="alpha">🔤 A-Z</option>
+                    <option value="points-desc">⭐ Höchste</option>
+                    <option value="points-asc">⭐ Niedrigste</option>
+                </select>
+            </div>
+
             <div id="info-tasks-list" class="tasks-grid"></div>
         </div>
     </div>
@@ -501,6 +583,9 @@
 
         let lastUnlockTime = 0, currentPin = "", pendingAction = null, activeKidForIcon = null, activeKidForPoints = null;
         let auth, db, user, firebaseReady = false;
+        
+        let currentTaskSearch = '';
+        let currentTaskSort = 'alpha';
 
         const openModal = (id) => document.getElementById(id).classList.add('active');
         const closeModal = (id) => document.getElementById(id).classList.remove('active');
@@ -515,6 +600,61 @@
 
         window.openModal = openModal;
         window.closeModal = closeModal;
+
+        // --- FLIEGENDE EMOJIS LOGIK ---
+        function spawnFlyingEmoji() {
+            if (!state || !state.kids || state.kids.length === 0) return;
+            const kid = state.kids[Math.floor(Math.random() * state.kids.length)];
+            if (!kid.icon) return;
+            
+            const el = document.createElement('div');
+            el.className = 'flying-emoji';
+            el.innerText = kid.icon;
+            
+            // Zufällige Flugbahn von den Rändern oder von unten
+            const side = Math.random();
+            let startX, startY, endX, endY;
+            
+            if (side > 0.5) {
+                // Startet von unten
+                startX = Math.random() * window.innerWidth;
+                startY = window.innerHeight + 100;
+                endX = startX + (Math.random() * 400 - 200);
+                endY = -100;
+            } else {
+                // Startet von den Seiten
+                startX = Math.random() > 0.5 ? -100 : window.innerWidth + 100;
+                startY = Math.random() * (window.innerHeight - 200) + 100;
+                endX = startX < 0 ? window.innerWidth + 100 : -100;
+                endY = startY - 200 - Math.random() * 300;
+            }
+
+            const duration = Math.random() * 6000 + 6000; // 6 bis 12 Sekunden
+            const startRot = Math.random() * 90 - 45;
+            const endRot = startRot + (Math.random() * 360 - 180); // Leichte Rotation während des Flugs
+            
+            el.style.setProperty('--startX', `${startX}px`);
+            el.style.setProperty('--startY', `${startY}px`);
+            el.style.setProperty('--endX', `${endX}px`);
+            el.style.setProperty('--endY', `${endY}px`);
+            el.style.setProperty('--startRot', `${startRot}deg`);
+            el.style.setProperty('--endRot', `${endRot}deg`);
+            el.style.animationDuration = `${duration}ms`;
+            
+            document.body.appendChild(el);
+            
+            setTimeout(() => {
+                if (el.parentNode) el.remove();
+            }, duration);
+        }
+
+        function scheduleNextFlyingEmoji() {
+            const delay = Math.random() * 4000 + 2000; // Alle 2 bis 6 Sekunden
+            setTimeout(() => {
+                spawnFlyingEmoji();
+                scheduleNextFlyingEmoji();
+            }, delay);
+        }
 
         async function initSync() {
             setStatus('connecting');
@@ -765,15 +905,49 @@
 
         window.clearHistory = () => { state.history = []; syncToCloud(); window.openHistoryModal(); showMessage("Historie gelöscht! 🗑️"); };
 
-        window.openAddPointsModal = (kidId) => {
-            activeKidForPoints = kidId;
+        window.updateTaskFilter = (modalType) => {
+            if (modalType === 'add') {
+                currentTaskSearch = document.getElementById('add-task-search').value.toLowerCase();
+                currentTaskSort = document.getElementById('add-task-sort').value;
+                window.renderAddTasksList();
+            } else if (modalType === 'info') {
+                currentTaskSearch = document.getElementById('info-task-search').value.toLowerCase();
+                currentTaskSort = document.getElementById('info-task-sort').value;
+                window.renderInfoTasksList();
+            }
+        };
+
+        function getFilteredAndSortedTasks() {
+            let tasks = [...state.tasks];
+            if (currentTaskSearch) {
+                tasks = tasks.filter(t => t.name.toLowerCase().includes(currentTaskSearch));
+            }
+            tasks.sort((a, b) => {
+                if (currentTaskSort === 'alpha') return a.name.localeCompare(b.name);
+                if (currentTaskSort === 'points-desc') return b.points - a.points;
+                if (currentTaskSort === 'points-asc') return a.points - b.points;
+                return 0;
+            });
+            return tasks;
+        }
+
+        window.renderAddTasksList = () => {
             const l = document.getElementById('add-tasks-list');
-            const sortedTasks = [...state.tasks].sort((a, b) => a.name.localeCompare(b.name));
-            l.innerHTML = sortedTasks.map((t, index) => `
-                <div class="task-btn-item" onclick="window.addPoints(${t.points}, '${t.name.replace(/'/g, "\\'")}')" style="animation: popStar 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.05}s forwards; opacity: 0; transform: scale(0.5);">
+            const tasks = getFilteredAndSortedTasks();
+            l.innerHTML = tasks.map((t, index) => `
+                <div class="task-btn-item" onclick="window.addPoints(${t.points}, '${t.name.replace(/'/g, "\\'")}')" style="animation: popItem 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${Math.min(index * 0.03, 0.3)}s both;">
                     <span class="task-btn-name" style="font-weight: 600;">${t.name}</span>
                     <span class="task-btn-points">+ ${t.points} ⭐</span>
                 </div>`).join('');
+        };
+
+        window.openAddPointsModal = (kidId) => {
+            activeKidForPoints = kidId;
+            currentTaskSearch = '';
+            currentTaskSort = 'alpha';
+            document.getElementById('add-task-search').value = '';
+            document.getElementById('add-task-sort').value = 'alpha';
+            window.renderAddTasksList();
             openModal('add-points-modal');
         };
 
@@ -850,14 +1024,27 @@
             openModal('history-modal');
         };
 
+        window.renderInfoTasksList = () => {
+            const l = document.getElementById('info-tasks-list');
+            const tasks = getFilteredAndSortedTasks();
+            l.innerHTML = tasks.map((t, index) => `
+                <div class="task-btn-item" style="animation: popItem 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${Math.min(index * 0.03, 0.3)}s both;">
+                    <span>${t.name}</span>
+                    <span class="task-btn-points">${t.points} ⭐</span>
+                </div>`).join('');
+        };
+
         window.openTasksInfoModal = () => {
             document.getElementById('info-goals-list').innerHTML = state.kids.map(k => `<div class="config-card"><b style="color:var(--blue); font-size:1.2rem;">${k.name}</b><br><span style="color:var(--pink)">🎁 ${k.valSmall}er:</span> ${k.sGoal}<br><span style="color:var(--gold)">🏆 ${k.valBig}er:</span> ${k.bGoal}<br><span style="color:var(--purple)">💎 ${k.valMega}er:</span> ${k.megaGoal}</div>`).join('');
-            const s = [...state.tasks].sort((a, b) => a.name.localeCompare(b.name));
-            document.getElementById('info-tasks-list').innerHTML = s.map((t, index) => `<div class="task-btn-item" style="animation: popStar 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.05}s forwards; opacity: 0; transform: scale(0.5);"><span>${t.name}</span><span class="task-btn-points">${t.points} ⭐</span></div>`).join('');
+            currentTaskSearch = '';
+            currentTaskSort = 'alpha';
+            document.getElementById('info-task-search').value = '';
+            document.getElementById('info-task-sort').value = 'alpha';
+            window.renderInfoTasksList();
             openModal('info-modal');
         };
 
-        window.openIconPicker = (id) => { activeKidForIcon = id; const icons = ['🦄','🚀','🦖','🐉','🐶','🐱','🐭','🐰','🦁','🐼','🐻','🐨','🦊','🐵','🐸','🦋','🐞','🐝','🐢','🐬','🐳','🐆','🦸','🧙','👑','💎','⚡','🔥','🌈','🎮','🎨','🎸','🍕','🍔','🍭','🍿']; document.getElementById('icon-grid').innerHTML = icons.map((i, index) => `<button class="icon-choice" onclick="window.selectIcon('${i}')" style="animation: popStar 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.02}s forwards; opacity: 0; transform: scale(0.5);">${i}</button>`).join(''); openModal('icon-modal'); };
+        window.openIconPicker = (id) => { activeKidForIcon = id; const icons = ['🦄','🚀','🦖','🐉','🐶','🐱','🐭','🐰','🦁','🐼','🐻','🐨','🦊','🐵','🐸','🦋','🐞','🐝','🐢','🐬','🐳','🐆','🦸','🧙','👑','💎','⚡','🔥','🌈','🎮','🎨','🎸','🍕','🍔','🍭','🍿']; document.getElementById('icon-grid').innerHTML = icons.map((i, index) => `<button class="icon-choice" onclick="window.selectIcon('${i}')" style="animation: popItem 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) ${Math.min(index * 0.02, 0.4)}s both;">${i}</button>`).join(''); openModal('icon-modal'); };
         window.selectIcon = (i) => { state.kids.find(k => k.id === activeKidForIcon).icon = i; render(); syncToCloud(); closeModal('icon-modal'); };
 
         window.checkPin = (a) => { if (Date.now() - lastUnlockTime < UNLOCK_DURATION) a(); else { pendingAction = a; currentPin = ""; updatePinDots(); openModal('pin-modal'); } };
@@ -869,9 +1056,9 @@
             const container = document.getElementById('unlock-status-container');
             const rTime = UNLOCK_DURATION - (Date.now() - lastUnlockTime);
             if (rTime > 0) {
-                container.innerHTML = `<div style="display:flex;align-items:center;gap:6px;"><span style="color:var(--gold);font-weight:bold;font-size:0.8rem;">🔓 ${Math.ceil(rTime/1000)}s</span><button onclick="window.manualLock()" style="background:rgba(239,68,68,0.2);border:1px solid #ef4444;color:#fca5a5;padding:2px 6px;border-radius:8px;font-size:0.7rem;font-weight:bold;cursor:pointer;font-family:'Baloo 2'; transition: transform 0.2s;">Sperren</button></div>`;
+                container.innerHTML = `<div style="display:flex;align-items:center;gap:6px;"><span style="color:#9a3412;font-weight:900;font-size:0.85rem;">🔓 ${Math.ceil(rTime/1000)}s</span><button onclick="window.manualLock()" style="background:#ef4444;border:none;color:white;padding:3px 8px;border-radius:10px;font-size:0.75rem;font-weight:bold;cursor:pointer;font-family:'Baloo 2'; transition: transform 0.2s; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);">Sperren</button></div>`;
                 setTimeout(updateUnlockDisplay, 1000);
-            } else { container.innerHTML = '<span style="color:#94a3b8;font-weight:bold;font-size:0.8rem;">🔒 Zu</span>'; }
+            } else { container.innerHTML = '<span style="color:#334155;font-weight:900;font-size:0.85rem;">🔒 Zu</span>'; }
         }
 
         const pad = document.getElementById('pin-pad');
@@ -890,6 +1077,8 @@
             pad.appendChild(b);
         });
 
+        // Starte die fliegenden Emojis
+        scheduleNextFlyingEmoji();
         initSync();
     </script>
 </body>
