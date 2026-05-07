@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v4.8</title>
+    <title>Kids Star Tracker Pro v4.9</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -207,9 +207,8 @@
         .total-score-badge { background: linear-gradient(135deg, var(--gold), #f59e0b); color: #000; font-size: 1.5rem; font-weight: 900; padding: 4px 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(251, 191, 36, 0.4); white-space: nowrap; transition: transform 0.3s; min-width: 120px; text-align: center; display: inline-block; }
         .btn-kid-reset { background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-kid-reset:active { transform: scale(0.9); }
-        .avatar-btn { font-size: 50px; background: rgba(255,255,255,0.08); border-radius: 20px; padding: 8px; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 6px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; min-width: 80px; min-height: 80px; animation: floatAvatar 5s ease-in-out infinite; transition: transform 0.2s; }
+        .avatar-btn { font-size: 50px; background: rgba(255,255,255,0.08); border-radius: 20px; padding: 8px; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 6px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; min-width: 80px; min-height: 80px; transition: transform 0.2s; }
         .avatar-btn:active { transform: scale(0.9) !important; }
-        @keyframes floatAvatar { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-3px) rotate(-3deg); } 75% { transform: translateY(3px) rotate(3deg); } }
         
         .tally-box { background: rgba(0,0,0,0.3); border-radius: 20px; min-height: 90px; padding: 15px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 15px; }
 
@@ -324,7 +323,7 @@
                 <h1>STAR TRACKER</h1>
                 <div class="designer-credit">Design by Markus Nussi</div>
                 <div class="version-bar">
-                    <span>v4.8 IPAD PRO</span>
+                    <span>v4.9 IPAD PRO</span>
                     <div id="status-dot" class="status-dot"></div>
                     <div id="unlock-status-container" style="margin-left: 6px; display: flex; align-items: center;"></div>
                 </div>
@@ -539,7 +538,7 @@
             { name: 'Zimmer aufräumen 🧸', points: 1 }
         ];
 
-        // NEU: Unterscheidung Abräumen (🧽) vs. Decken (🍽️) und Tageszeiten (🌅, ☀️, 🌙)
+        // NEU: Mit spezifischen Doppel-Emojis, die nun zu 100% repariert geladen werden!
         const DEFAULT_DAILY_TASKS = [
             { id: 'mf1', label: 'Meerschweinchen (Morgen)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0, emoji: '🐹🌅' },
             { id: 'mf2', label: 'Meerschweinchen (Abend)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0, emoji: '🐹🌙' },
@@ -603,6 +602,34 @@
             event.currentTarget.classList.add('active');
             document.getElementById(tabId).classList.add('active');
         };
+
+        // --- HIER IST DER MAGISCHE REPARATUR-CODE FÜR DIE EMOJIS! ---
+        window.getSafeEmoji = function(taskObj) {
+            // Hilfsfunktion: Prüft, ob wirklich ein sichtbares Emoji/Zeichen da ist
+            const isVisible = (str) => {
+                if (!str) return false;
+                // Entfernt Leerzeichen und versteckte Variation Selectors
+                const cleaned = str.replace(/[\uFE0E\uFE0F\s]/g, '');
+                return cleaned.length > 0;
+            };
+
+            // 1. Ist im Emoji-Feld der Config ein echtes, sichtbares Emoji?
+            if (isVisible(taskObj.emoji)) {
+                return taskObj.emoji.trim();
+            }
+
+            // 2. Fallback: Hole Symbole/Emojis aus dem Namen der Standardaufgabe
+            if (taskObj.baseTask) {
+                // Entfernt Buchstaben, Zahlen und Sonderzeichen -> Übrig bleiben die Emojis
+                const extracted = taskObj.baseTask.replace(/[a-zA-Z0-9\s\.,;:!?()\[\]{}"'\-\/äöüÄÖÜß+&]/g, '').trim();
+                if (isVisible(extracted)) {
+                    return extracted; 
+                }
+            }
+            
+            return '✨'; // Absoluter Notfall-Stern
+        };
+
 
         // --- ZENTRALE FLIEGENDE STERNE ANIMATION ---
         function triggerFlyingStarAnimation(kidId, points, taskName, callback) {
@@ -888,37 +915,11 @@
             showMessage("Tagesaufgabe rückgängig gemacht! ⏪");
         };
 
-        // Bessere Methode, die benutzerdefinierte Emojis exakt übernimmt
-        function getSafeEmoji(taskObj) {
-            // 1. Manuell gesetztes Emoji vorhanden? (Nimmt exakt das, was in Config steht, auch mehrere!)
-            if (taskObj.emoji && taskObj.emoji.trim() !== '') {
-                return taskObj.emoji.trim();
-            }
-
-            // Fallback: Versuche Emoji aus BaseTask zu fischen
-            const extractLastNonText = (str) => {
-                if (!str) return null;
-                const stripped = str.replace(/[a-zA-Z0-9\s\.,;:!?()\[\]{}"'\-\/]/g, '').trim();
-                if (stripped.length > 0) {
-                    const chars = [...stripped];
-                    return chars[chars.length - 1];
-                }
-                return null;
-            };
-            
-            if (taskObj.baseTask) {
-                const found = extractLastNonText(taskObj.baseTask);
-                if (found) return found;
-            }
-            
-            return '✨';
-        }
-
         window.openDailyTaskDetails = (taskId, kidId) => {
             const dt = state.dailyTasksConfig.find(t => t.id === taskId);
             const kid = state.kids.find(k => k.id === kidId);
             const pts = getTaskPoints(dt.baseTask);
-            const emoji = getSafeEmoji(dt);
+            const emoji = window.getSafeEmoji(dt); // Verwendet unsere supersichere Methode!
 
             document.getElementById('dd-emoji').innerText = emoji;
             document.getElementById('dd-title').innerText = dt.label;
@@ -958,7 +959,7 @@
                 html += `<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding-top: 5px;">`;
                 available.forEach(t => {
                     const pts = getTaskPoints(t.baseTask);
-                    const emoji = getSafeEmoji(t);
+                    const emoji = window.getSafeEmoji(t);
                     
                     html += `<div class="daily-item" onclick="window.openDailyTaskDetails('${t.id}', ${kid.id})" style="flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; width: calc(50% - 4px); max-width: 80px; aspect-ratio: 1/1; gap: 4px;">
                                 <span style="font-size: 1.8rem; line-height: 1; letter-spacing: -2px; margin-bottom: 2px;">${emoji}</span>
@@ -1263,7 +1264,7 @@
                 <div class="config-card" style="padding: 15px; margin-bottom: 10px;">
                     <div style="display:flex; gap: 10px; margin-bottom: 10px;">
                         <input id="dtl-${i}" value="${dt.label}" placeholder="Tagesaufgabe Name" style="margin:0; flex:1;">
-                        <input id="dte-${i}" value="${dt.emoji || ''}" placeholder="Emojis (z.B. 🐹)" style="margin:0; width: 100px; text-align: center; font-size: 1.2rem;">
+                        <input id="dte-${i}" value="${window.getSafeEmoji(dt)}" placeholder="Emojis (z.B. 🐹)" style="margin:0; width: 100px; text-align: center; font-size: 1.2rem;">
                         <button onclick="window.removeDailyTaskConfig(${i})" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; border-radius:10px; width:45px; cursor:pointer; transition: transform 0.2s;">🗑</button>
                     </div>
                     
@@ -1335,7 +1336,20 @@
                 const labelEl = document.getElementById(`dtl-${i}`);
                 if(labelEl) {
                     dt.label = labelEl.value;
-                    dt.emoji = document.getElementById(`dte-${i}`).value;
+                    
+                    // Saubere Sicherung des User-Inputs
+                    let inputEmoji = document.getElementById(`dte-${i}`).value;
+                    const isVisible = (str) => {
+                        if (!str) return false;
+                        return str.replace(/[\uFE0E\uFE0F\s]/g, '').length > 0;
+                    };
+                    
+                    if (isVisible(inputEmoji)) {
+                        dt.emoji = inputEmoji.trim();
+                    } else {
+                        dt.emoji = ""; // Macht Platz für Fallback!
+                    }
+                    
                     dt.baseTask = document.getElementById(`dtb-${i}`).value;
                     dt.type = document.getElementById(`dtt-${i}`).value;
                     dt.kidId = parseInt(document.getElementById(`dtk-${i}`).value);
