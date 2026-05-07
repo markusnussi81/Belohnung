@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v4.9</title>
+    <title>Kids Star Tracker Pro v5.0</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -323,7 +323,7 @@
                 <h1>STAR TRACKER</h1>
                 <div class="designer-credit">Design by Markus Nussi</div>
                 <div class="version-bar">
-                    <span>v4.9 IPAD PRO</span>
+                    <span>v5.0 IPAD PRO</span>
                     <div id="status-dot" class="status-dot"></div>
                     <div id="unlock-status-container" style="margin-left: 6px; display: flex; align-items: center;"></div>
                 </div>
@@ -345,7 +345,7 @@
     <div id="daily-detail-modal" class="modal">
         <div class="modal-content-scroll" style="text-align: center; max-width: 400px; border: 2px solid var(--blue); position: relative;">
             <button class="btn-close-top" onclick="window.closeModal('daily-detail-modal')" style="z-index: 100;">X</button>
-            <div id="dd-emoji" style="font-size: 5rem; margin-bottom: 5px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));"></div>
+            <div id="dd-emoji" style="font-size: 5rem; margin-bottom: 5px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); letter-spacing: -5px;"></div>
             <h2 id="dd-title" style="margin: 0 0 10px 0; color: white; font-size: 1.8rem; line-height: 1.2;"></h2>
             <div id="dd-pts" style="font-size: 1.4rem; color: var(--gold); font-weight: 800; margin-bottom: 25px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>
             <button id="dd-confirm-btn" class="btn-claim" style="font-size: 1.5rem; padding: 15px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);">Erledigt! ✅</button>
@@ -420,7 +420,7 @@
                         <h3 style="color: var(--gold); margin-top: 0; margin-bottom: 20px;">Punkte & Standardaufgaben</h3>
                         <div style="display: flex; gap: 10px; margin-bottom: 20px;">
                             <button onclick="window.addNewTaskInput()" style="flex: 1; padding:12px; border-radius:15px; background:rgba(255,255,255,0.05); color:white; border:1px dashed rgba(255,255,255,0.4); font-family: 'Baloo 2'; font-weight: bold; cursor: pointer; transition: transform 0.2s;">+ Neue Aufgabe</button>
-                            <button onclick="window.loadDefaultTasks()" style="flex: 1; padding:12px; border-radius:15px; background:rgba(56,189,248,0.1); color:var(--blue); border:1px solid var(--blue); font-family: 'Baloo 2'; font-weight: bold; cursor: pointer; transition: transform 0.2s;">📋 Standardaufgaben laden</button>
+                            <button onclick="window.loadDefaultTasks()" style="flex: 1; padding:12px; border-radius:15px; background:rgba(56,189,248,0.1); color:var(--blue); border:1px solid var(--blue); font-family: 'Baloo 2'; font-weight: bold; cursor: pointer; transition: transform 0.2s;">📋 Aufgaben & Tagesplan reparieren/laden</button>
                         </div>
                         <div id="config-tasks-fields"></div>
                     </div>
@@ -538,7 +538,7 @@
             { name: 'Zimmer aufräumen 🧸', points: 1 }
         ];
 
-        // NEU: Mit spezifischen Doppel-Emojis, die nun zu 100% repariert geladen werden!
+        // Die sichere Konfiguration der Default-Werte
         const DEFAULT_DAILY_TASKS = [
             { id: 'mf1', label: 'Meerschweinchen (Morgen)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0, emoji: '🐹🌅' },
             { id: 'mf2', label: 'Meerschweinchen (Abend)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0, emoji: '🐹🌙' },
@@ -603,31 +603,31 @@
             document.getElementById(tabId).classList.add('active');
         };
 
-        // --- HIER IST DER MAGISCHE REPARATUR-CODE FÜR DIE EMOJIS! ---
+        // --- BOMBENSICHERE EMOJI-ERKENNUNG ---
         window.getSafeEmoji = function(taskObj) {
-            // Hilfsfunktion: Prüft, ob wirklich ein sichtbares Emoji/Zeichen da ist
-            const isVisible = (str) => {
-                if (!str) return false;
-                // Entfernt Leerzeichen und versteckte Variation Selectors
-                const cleaned = str.replace(/[\uFE0E\uFE0F\s]/g, '');
-                return cleaned.length > 0;
-            };
-
-            // 1. Ist im Emoji-Feld der Config ein echtes, sichtbares Emoji?
-            if (isVisible(taskObj.emoji)) {
+            // 1. Manuell in den Einstellungen gesetzt?
+            if (taskObj.emoji && taskObj.emoji.trim() !== '') {
                 return taskObj.emoji.trim();
             }
 
-            // 2. Fallback: Hole Symbole/Emojis aus dem Namen der Standardaufgabe
+            // 2. Versuch, echte Emojis aus der Base-Aufgabe zu fischen (sichere Regex-Methode)
             if (taskObj.baseTask) {
-                // Entfernt Buchstaben, Zahlen und Sonderzeichen -> Übrig bleiben die Emojis
-                const extracted = taskObj.baseTask.replace(/[a-zA-Z0-9\s\.,;:!?()\[\]{}"'\-\/äöüÄÖÜß+&]/g, '').trim();
-                if (isVisible(extracted)) {
-                    return extracted; 
+                // Diese Regex findet alle Emojis im Text und filtert normale Buchstaben heraus
+                const match = taskObj.baseTask.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu);
+                if (match && match.length > 0) {
+                    return match.join('');
                 }
             }
             
-            return '✨'; // Absoluter Notfall-Stern
+            // 3. Wenn alles fehlschlägt, geben wir aufgrund der ID harte Emojis vor (Garantiert keine leeren Knöpfe mehr!)
+            if (taskObj.id.includes('mf')) return '🐹';
+            if (taskObj.id.includes('em') || taskObj.id.includes('ea')) return '🧽';
+            if (taskObj.id.includes('ei')) return '👟';
+            if (taskObj.id.includes('tm') || taskObj.id.includes('ta')) return '🍽️';
+            if (taskObj.id.includes('so')) return '🛋️';
+            if (taskObj.id.includes('hl') || taskObj.id.includes('hn')) return '📚';
+
+            return '✨'; // Absolutes Fallback
         };
 
 
@@ -822,7 +822,20 @@
                     state = docSnap.data();
                     if(!state.history) state.history = [];
                     if(!state.tasks || state.tasks.length === 0) state.tasks = DEFAULT_TASKS_POOL.map((t, i) => ({ ...t, id: i + 1 }));
-                    if(!state.dailyTasksConfig || state.dailyTasksConfig.length === 0) state.dailyTasksConfig = [...DEFAULT_DAILY_TASKS];
+                    
+                    if(!state.dailyTasksConfig || state.dailyTasksConfig.length === 0) {
+                        state.dailyTasksConfig = [...DEFAULT_DAILY_TASKS];
+                    } else {
+                        // AUTO-REPARATUR FÜR DEIN IPAD: 
+                        // Wir zwingen die Datenbank, fehlerhafte Emojis sofort wieder mit den Standard-Werten zu überschreiben.
+                        state.dailyTasksConfig.forEach(dt => {
+                            const def = DEFAULT_DAILY_TASKS.find(d => d.id === dt.id);
+                            if (def && (!dt.emoji || [...(dt.emoji || '')].length < 2)) {
+                                dt.emoji = def.emoji; 
+                            }
+                        });
+                    }
+
                     if(!state.pin) state.pin = PIN; 
 
                     if (!state.dailyState) state.dailyState = { date: getTodayStr(), completed: [] };
@@ -919,7 +932,7 @@
             const dt = state.dailyTasksConfig.find(t => t.id === taskId);
             const kid = state.kids.find(k => k.id === kidId);
             const pts = getTaskPoints(dt.baseTask);
-            const emoji = window.getSafeEmoji(dt); // Verwendet unsere supersichere Methode!
+            const emoji = window.getSafeEmoji(dt);
 
             document.getElementById('dd-emoji').innerText = emoji;
             document.getElementById('dd-title').innerText = dt.label;
@@ -962,7 +975,7 @@
                     const emoji = window.getSafeEmoji(t);
                     
                     html += `<div class="daily-item" onclick="window.openDailyTaskDetails('${t.id}', ${kid.id})" style="flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; width: calc(50% - 4px); max-width: 80px; aspect-ratio: 1/1; gap: 4px;">
-                                <span style="font-size: 1.8rem; line-height: 1; letter-spacing: -2px; margin-bottom: 2px;">${emoji}</span>
+                                <span style="font-size: 1.6rem; line-height: 1.1; margin-bottom: 2px; white-space: nowrap; letter-spacing: 0;">${emoji}</span>
                                 <span class="daily-pts" style="margin:0; font-size: 0.75rem;">+${pts}</span>
                              </div>`;
                 });
@@ -1364,9 +1377,28 @@
             closeModal('config-modal'); render(); syncToCloud(); showMessage("Einstellungen gespeichert! 💾");
         };
 
+        // SUPERCHARGED: Repariert bei Knopfdruck alle fehlenden/kaputten Emojis auf die Standardwerte
         window.loadDefaultTasks = () => { 
-            DEFAULT_TASKS_POOL.forEach(d => { if(!state.tasks.some(t => t.name === d.name)) state.tasks.push({ ...d, id: Date.now() + Math.random() }); }); 
+            DEFAULT_TASKS_POOL.forEach(d => { 
+                if(!state.tasks.some(t => t.name === d.name)) {
+                    state.tasks.push({ ...d, id: Date.now() + Math.random() }); 
+                }
+            }); 
+
+            // Komplette Reparatur der Tagesaufgaben
+            DEFAULT_DAILY_TASKS.forEach(def => {
+                const existing = state.dailyTasksConfig.find(t => t.id === def.id);
+                if (existing) {
+                    existing.emoji = def.emoji; // Erzwingt die korrekten Doppel-Emojis
+                } else {
+                    state.dailyTasksConfig.push({ ...def }); // Holt gelöschte Standardaufgaben zurück
+                }
+            });
+
             window.renderTasksConfig(); 
+            window.renderDailyTasksConfig();
+            window.saveConfig();
+            showMessage("Standardaufgaben repariert und geladen! 🌟");
         };
         
         window.addNewTaskInput = () => { state.tasks.push({ id: Date.now(), name: '', points: 1 }); window.renderTasksConfig(); };
