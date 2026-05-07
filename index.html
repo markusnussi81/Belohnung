@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v4.5</title>
+    <title>Kids Star Tracker Pro v4.8</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -70,15 +70,8 @@
             z-index: -1; pointer-events: none;
         }
 
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        @keyframes drift {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            100% { transform: translate(-75px, -75px) rotate(3deg); }
-        }
+        @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        @keyframes drift { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(-75px, -75px) rotate(3deg); } }
 
         .flying-emoji {
             position: fixed; font-size: 3.5rem; pointer-events: none; z-index: 5; 
@@ -142,50 +135,65 @@
         .btn-info:active { transform: scale(0.95); }
         .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 1.1rem; }
 
-        /* --- 3-SPALTEN IPAD LAYOUT --- */
-        .main-layout {
-            display: grid; grid-template-columns: 1fr; gap: 15px; flex: 1;
-        }
+        /* --- LAYOUT MIT ANGEDOCKTEN KARTEN (KID GROUP) --- */
+        .main-layout { display: grid; grid-template-columns: 1fr; gap: 20px; flex: 1; }
+        
+        .kid-group { display: flex; height: 100%; min-height: 100%; animation: floatCard 6s ease-in-out infinite; }
+        .kid-group:nth-child(even) { animation-delay: -3s; }
+        @keyframes floatCard { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
         @media (min-width: 850px) {
-            .main-layout { grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.1fr) minmax(280px, 1fr); }
+            .main-layout { grid-template-columns: 1fr 1fr; }
+            .kid-group-left .kid-card { border-radius: 25px 0 0 25px !important; border-right: none !important; }
+            .kid-group-left .daily-dashboard { border-radius: 0 25px 25px 0 !important; border-left: none !important; }
+            
+            .kid-group-right .daily-dashboard { border-radius: 25px 0 0 25px !important; border-right: none !important; }
+            .kid-group-right .kid-card { border-radius: 0 25px 25px 0 !important; border-left: none !important; }
         }
 
-        /* --- TAGESAUFGABEN BEREICH --- */
-        .daily-dashboard {
-            background: rgba(15, 23, 42, 0.6); border-radius: 20px; padding: 12px; margin-bottom: 0;
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            backdrop-filter: blur(10px); display: flex; flex-direction: column; height: 100%; min-height: 100%;
+        @media (max-width: 849px) {
+            .kid-group-left { flex-direction: column; }
+            .kid-group-left .kid-card { border-radius: 25px 25px 0 0 !important; border-bottom: none !important; }
+            .kid-group-left .daily-dashboard { border-radius: 0 0 25px 25px !important; border-top: none !important; width: 100% !important; }
+            
+            .kid-group-right { flex-direction: column-reverse; }
+            .kid-group-right .kid-card { border-radius: 25px 25px 0 0 !important; border-bottom: none !important; }
+            .kid-group-right .daily-dashboard { border-radius: 0 0 25px 25px !important; border-top: none !important; width: 100% !important; }
         }
-        .daily-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px; }
-        .daily-header h3 { margin: 0; font-size: 1.1rem; color: var(--gold); font-weight: 800; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
-        .btn-undo { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid #ef4444; padding: 3px 8px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 0.75rem; transition: transform 0.2s; }
+
+        /* --- TAGESAUFGABEN DOCKED-DASHBOARD --- */
+        .daily-dashboard {
+            background: rgba(15, 23, 42, 0.6); padding: 10px;
+            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column; 
+            width: 200px; flex-shrink: 0; z-index: 2; position: relative;
+        }
+        .daily-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+        .daily-header h3 { margin: 0; font-size: 0.95rem; color: var(--gold); font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); line-height: 1.1; }
+        .btn-undo { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid #ef4444; padding: 2px 6px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.7rem; transition: transform 0.2s; margin-left: 5px; }
         .btn-undo:active { transform: scale(0.9); }
         
-        .daily-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .daily-col { display: flex; flex-direction: column; gap: 6px; }
-        .daily-col-title { text-align: center; font-size: 1rem; font-weight: 800; color: white; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        
         .daily-item {
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 12px;
-            padding: 6px 8px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); line-height: 1.2;
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
+            padding: 4px 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); line-height: 1.1; min-height: 32px;
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
         }
         .daily-item:hover { transform: scale(1.03) translateY(-2px); background: rgba(255,255,255,0.15); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
         .daily-item:active { transform: scale(0.95); }
-        .daily-item span:first-child { flex: 1; padding-right: 5px; }
-        .daily-pts { background: var(--blue); color: #000; padding: 2px 5px; border-radius: 8px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+        
+        .daily-item-text { flex: 1; padding-right: 4px; hyphens: auto; -webkit-hyphens: auto; word-break: break-word; text-align: left; }
+        .daily-pts { background: var(--blue); color: #000; padding: 2px 4px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
         .daily-empty { text-align: center; color: rgba(255,255,255,0.4); font-size: 0.8rem; font-style: italic; margin-top: 5px; }
 
         /* --- KID CARDS --- */
         .kid-card {
-            background: var(--card-bg); border-radius: 25px; padding: 15px;
+            background: var(--card-bg); padding: 15px;
             border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.05);
             backdrop-filter: blur(15px); display: flex; flex-direction: column;
-            animation: floatCard 6s ease-in-out infinite; position: relative; overflow: hidden; height: 100%; min-height: 100%;
+            position: relative; overflow: hidden; flex: 1; min-width: 0; z-index: 1;
         }
         .kid-card > * { position: relative; z-index: 1; }
-        .kid-card:nth-child(even) { animation-delay: -3s; }
-        @keyframes floatCard { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
         .kid-card.theme-0 { background: linear-gradient(135deg, rgba(13, 148, 136, 0.8), rgba(15, 118, 110, 0.95)); border-color: rgba(45, 212, 191, 0.4); box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 30px rgba(45, 212, 191, 0.3); }
         .kid-card.theme-0::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0; background-image: radial-gradient(circle at 15% 25%, rgba(255,255,255,0.15) 2px, transparent 3px), radial-gradient(circle at 75% 15%, rgba(255,255,255,0.1) 4px, transparent 5px), radial-gradient(circle at 45% 65%, rgba(255,255,255,0.1) 2px, transparent 3px), url('data:image/svg+xml;utf8,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><path d="M30 10 L33 27 L50 30 L33 33 L30 50 L27 33 L10 30 L27 27 Z" fill="rgba(255,255,255,0.04)"/></svg>'); background-size: 100px 100px, 120px 120px, 80px 80px, 60px 60px; }
@@ -260,7 +268,7 @@
         /* --- TABS FÜR SETTINGS (IPAD SIDEBAR LAYOUT) --- */
         .settings-container { display: flex; height: calc(100vh - 120px); margin-top: 20px; }
         .settings-sidebar { width: 260px; border-right: 2px solid rgba(255,255,255,0.1); padding-right: 20px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0; }
-        .settings-main { flex: 1; padding-left: 30px; overflow-y: auto; padding-bottom: 80px; }
+        .settings-main { flex: 1; padding-left: 30px; overflow-y: auto; padding-bottom: 140px; }
         
         .tab-btn { background: rgba(0,0,0,0.2); color: #94a3b8; border: 1px solid transparent; border-radius: 15px; padding: 15px 20px; font-family: 'Baloo 2'; font-weight: 800; font-size: 1.1rem; cursor: pointer; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: left; }
         .tab-btn:hover { background: rgba(255,255,255,0.05); transform: translateX(5px); color: white; }
@@ -316,7 +324,7 @@
                 <h1>STAR TRACKER</h1>
                 <div class="designer-credit">Design by Markus Nussi</div>
                 <div class="version-bar">
-                    <span>v4.5 IPAD PRO</span>
+                    <span>v4.8 IPAD PRO</span>
                     <div id="status-dot" class="status-dot"></div>
                     <div id="unlock-status-container" style="margin-left: 6px; display: flex; align-items: center;"></div>
                 </div>
@@ -328,14 +336,23 @@
             </div>
         </header>
 
-        <!-- 3-SPALTEN LAYOUT (Kid L | Daily | Kid R) -->
-        <div id="main-layout" class="main-layout">
-            <!-- Wird von JS befüllt -->
-        </div>
+        <!-- HAUPT-LAYOUT (Wird dynamisch befüllt) -->
+        <div id="main-layout" class="main-layout"></div>
 
     </div>
 
     <!-- Modals -->
+    <!-- DETAIL-FENSTER FÜR TAGESAUFGABEN -->
+    <div id="daily-detail-modal" class="modal">
+        <div class="modal-content-scroll" style="text-align: center; max-width: 400px; border: 2px solid var(--blue); position: relative;">
+            <button class="btn-close-top" onclick="window.closeModal('daily-detail-modal')" style="z-index: 100;">X</button>
+            <div id="dd-emoji" style="font-size: 5rem; margin-bottom: 5px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5));"></div>
+            <h2 id="dd-title" style="margin: 0 0 10px 0; color: white; font-size: 1.8rem; line-height: 1.2;"></h2>
+            <div id="dd-pts" style="font-size: 1.4rem; color: var(--gold); font-weight: 800; margin-bottom: 25px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>
+            <button id="dd-confirm-btn" class="btn-claim" style="font-size: 1.5rem; padding: 15px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);">Erledigt! ✅</button>
+        </div>
+    </div>
+
     <div id="pin-modal" class="modal">
         <div class="modal-content-scroll" style="max-width: 380px; text-align: center;">
             <h2 style="font-size: 2.5rem; margin-top: 0; margin-bottom: 5px;">Geheimcode</h2>
@@ -371,8 +388,9 @@
     <!-- VOLLBILD EINSTELLUNGEN -->
     <div id="config-modal" class="modal">
         <div class="modal-content-scroll modal-fullscreen">
+            <button onclick="window.closeModal('config-modal')" style="position: absolute; top: 20px; left: 20px; background: rgba(255,255,255,0.1); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; transition: all 0.2s; padding: 8px 18px; font-family: 'Baloo 2'; z-index: 200; font-size: 1.1rem;">&larr; Zurück</button>
             <button class="btn-close-top" onclick="window.closeModal('config-modal')" style="background: rgba(239,68,68,0.8); box-shadow: 0 2px 10px rgba(0,0,0,0.5); z-index: 200;">X</button>
-            <h2 style="color: var(--blue); font-size: 2.2rem; margin-top: 0; margin-bottom: 0; text-shadow: 0 2px 5px rgba(0,0,0,0.5); padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1);">⚙️ Zentraleinstellungen</h2>
+            <h2 style="color: var(--blue); font-size: 2.2rem; margin-top: 0; margin-bottom: 0; text-shadow: 0 2px 5px rgba(0,0,0,0.5); padding-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); text-align: center;">⚙️ Zentraleinstellungen</h2>
             
             <div class="settings-container">
                 <!-- SIDEBAR -->
@@ -501,7 +519,7 @@
             { name: 'Bäder putzen 🛁', points: 2 },
             { name: 'Cosmo Gassi gehen 🐕', points: 1.5 },
             { name: 'Eingang Schuhe Schulzeug 👟', points: 0.5 },
-            { name: 'Esstisch abräumen und putzen 🧽', points: 0.5 },
+            { name: 'Esstisch abräumen und putzen 🍽️', points: 0.5 },
             { name: 'Fenster putzen 🪟', points: 2 },
             { name: 'Hausaufgaben 📚', points: 0.5 },
             { name: 'Kochen helfen 🍳', points: 1.5 },
@@ -521,17 +539,18 @@
             { name: 'Zimmer aufräumen 🧸', points: 1 }
         ];
 
+        // NEU: Unterscheidung Abräumen (🧽) vs. Decken (🍽️) und Tageszeiten (🌅, ☀️, 🌙)
         const DEFAULT_DAILY_TASKS = [
-            { id: 'mf1', label: 'Meerschweinchen füttern (Morgen)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0 },
-            { id: 'mf2', label: 'Meerschweinchen füttern (Abend)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0 },
-            { id: 'em', label: 'Esstisch abräumen Mittag', baseTask: 'Esstisch abräumen und putzen 🧽', type: 'shared', kidId: 0 },
-            { id: 'ea', label: 'Esstisch abräumen Abend', baseTask: 'Esstisch abräumen und putzen 🧽', type: 'shared', kidId: 0 },
-            { id: 'ei', label: 'Eingang aufräumen', baseTask: 'Eingang Schuhe Schulzeug 👟', type: 'shared', kidId: 0 },
-            { id: 'tm', label: 'Tisch decken Mittag', baseTask: 'Tischen 🍽️', type: 'shared', kidId: 0 },
-            { id: 'ta', label: 'Tisch decken Abend', baseTask: 'Tischen 🍽️', type: 'shared', kidId: 0 },
-            { id: 'so', label: 'Sofa aufräumen', baseTask: 'Sofa aufräumen 🛋️', type: 'shared', kidId: 0 },
-            { id: 'hl', label: 'Hausaufgaben', baseTask: 'Hausaufgaben 📚', type: 'individual', kidId: 1 },
-            { id: 'hn', label: 'Hausaufgaben', baseTask: 'Hausaufgaben 📚', type: 'individual', kidId: 0 } 
+            { id: 'mf1', label: 'Meerschweinchen (Morgen)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0, emoji: '🐹🌅' },
+            { id: 'mf2', label: 'Meerschweinchen (Abend)', baseTask: 'Meerschweinchen füttern 🐹', type: 'shared', kidId: 0, emoji: '🐹🌙' },
+            { id: 'em', label: 'Esstisch abräumen Mittag', baseTask: 'Esstisch abräumen und putzen 🍽️', type: 'shared', kidId: 0, emoji: '🧽☀️' },
+            { id: 'ea', label: 'Esstisch abräumen Abend', baseTask: 'Esstisch abräumen und putzen 🍽️', type: 'shared', kidId: 0, emoji: '🧽🌙' },
+            { id: 'ei', label: 'Eingang aufräumen', baseTask: 'Eingang Schuhe Schulzeug 👟', type: 'shared', kidId: 0, emoji: '👟🚪' },
+            { id: 'tm', label: 'Tisch decken Mittag', baseTask: 'Tischen 🍽️', type: 'shared', kidId: 0, emoji: '🍽️☀️' },
+            { id: 'ta', label: 'Tisch decken Abend', baseTask: 'Tischen 🍽️', type: 'shared', kidId: 0, emoji: '🍽️🌙' },
+            { id: 'so', label: 'Sofa aufräumen', baseTask: 'Sofa aufräumen 🛋️', type: 'shared', kidId: 0, emoji: '🛋️✨' },
+            { id: 'hl', label: 'Hausaufgaben', baseTask: 'Hausaufgaben 📚', type: 'individual', kidId: 1, emoji: '📚✍️' },
+            { id: 'hn', label: 'Hausaufgaben', baseTask: 'Hausaufgaben 📚', type: 'individual', kidId: 0, emoji: '📚✍️' } 
         ];
 
         let state = {
@@ -585,7 +604,7 @@
             document.getElementById(tabId).classList.add('active');
         };
 
-        // --- ZENTRALE FLIEGENDE STERNE ANIMATION (NEU MIT PAUSE & KOMPLIMENTEN) ---
+        // --- ZENTRALE FLIEGENDE STERNE ANIMATION ---
         function triggerFlyingStarAnimation(kidId, points, taskName, callback) {
             const COMPLIMENTS = [
                 "Super gemacht!", "Klasse!", "Fantastisch!", "Weiter so!", "Du bist ein Star!", 
@@ -596,7 +615,7 @@
                 "Phänomenal!", "Sensationell!", "Beeindruckend!", "Fabelhaft!", "Exzellent!", 
                 "Tadellos!", "Makellos!", "Erste Sahne!", "Echt cool!", "Wahnsinn!", 
                 "Märchenhaft!", "Zauberhaft!", "Heroisch!", "Gigantisch!", "Bombastisch!", 
-                "Spektacular!", "Vorbildlich!", "Prächtig!", "Glanzleistung!", "Meisterleistung!", 
+                "Spektakulär!", "Vorbildlich!", "Prächtig!", "Glanzleistung!", "Meisterleistung!", 
                 "Unschlagbar!", "Weltklasse!", "Außergewöhnlich!", "Atemberaubend!", "Top!", 
                 "Tiptop!", "Einfach genial!", "Echt stark!", "Super Leistung!", "Tolles Ergebnis!", 
                 "Sehr gut!", "Klasse gemacht!", "Echt krass!", "Unfassbar gut!", "Richtig toll!", 
@@ -778,7 +797,7 @@
                     if(!state.tasks || state.tasks.length === 0) state.tasks = DEFAULT_TASKS_POOL.map((t, i) => ({ ...t, id: i + 1 }));
                     if(!state.dailyTasksConfig || state.dailyTasksConfig.length === 0) state.dailyTasksConfig = [...DEFAULT_DAILY_TASKS];
                     if(!state.pin) state.pin = PIN; 
-                    
+
                     if (!state.dailyState) state.dailyState = { date: getTodayStr(), completed: [] };
                     if (state.dailyState.date !== getTodayStr()) {
                         state.dailyState.date = getTodayStr();
@@ -836,16 +855,29 @@
             }
         };
 
-        window.undoLastDailyTask = () => {
+        window.undoLastDailyTask = (kidId) => {
             if (!state.dailyState || !state.dailyState.completed || state.dailyState.completed.length === 0) {
                 return showMessage("Nichts zum Rückgängig machen!");
             }
-            const lastTask = state.dailyState.completed.pop();
+            
+            let taskIndex = -1;
+            for(let i = state.dailyState.completed.length - 1; i >= 0; i--) {
+                if(state.dailyState.completed[i].kidId === kidId) {
+                    taskIndex = i;
+                    break;
+                }
+            }
+
+            if(taskIndex === -1) {
+                return showMessage("Keine Aufgabe zum Rückgängig machen.");
+            }
+
+            const lastTask = state.dailyState.completed.splice(taskIndex, 1)[0];
             const kid = state.kids.find(k => k.id === lastTask.kidId);
+            
             if(kid) {
                 kid.count = Math.max(0, Math.round(((kid.count || 0) - lastTask.points) * 10) / 10);
                 
-                // Korrektur: Trophäen entfernen, wenn Punkte unter das Ziel fallen
                 const step = kid.valSmall || 10;
                 const maxAck = Math.floor(kid.count / step);
                 if ((kid.ackTens || 0) > maxAck) kid.ackTens = maxAck;
@@ -856,43 +888,87 @@
             showMessage("Tagesaufgabe rückgängig gemacht! ⏪");
         };
 
-        function renderDailyTasks() {
-            const grid = document.getElementById('daily-grid');
-            if(!grid) return;
-            grid.innerHTML = '';
-            
-            const noelle = state.kids.find(k => k.id === 0);
-            const levi = state.kids.find(k => k.id === 1);
+        // Bessere Methode, die benutzerdefinierte Emojis exakt übernimmt
+        function getSafeEmoji(taskObj) {
+            // 1. Manuell gesetztes Emoji vorhanden? (Nimmt exakt das, was in Config steht, auch mehrere!)
+            if (taskObj.emoji && taskObj.emoji.trim() !== '') {
+                return taskObj.emoji.trim();
+            }
 
-            if (!noelle || !levi) return;
-
-            const completedIds = state.dailyState.completed.map(c => c.taskId);
-
-            const renderCol = (kid) => {
-                const kidsCompletedTasks = state.dailyState.completed.filter(c => c.kidId === kid.id).length;
-                const available = state.dailyTasksConfig.filter(t => !completedIds.includes(t.id) && (t.type === 'shared' || t.kidId === kid.id));
-                
-                let html = `<div class="daily-col">
-                                <div class="daily-col-title">${kid.icon} ${kid.name} <span style="font-size:0.8rem; color:var(--gold); opacity:0.9;">(${kidsCompletedTasks}/5)</span></div>`;
-                
-                if (kidsCompletedTasks >= 5) {
-                    html += `<div class="daily-empty" style="color: var(--gold); font-weight: bold; font-size: 0.95rem;">Tageslimit erreicht! 🌟</div>`;
-                } else if (available.length === 0) {
-                    html += `<div class="daily-empty">Alle Aufgaben erledigt! 🎉</div>`;
-                } else {
-                    available.forEach(t => {
-                        const pts = getTaskPoints(t.baseTask);
-                        html += `<div class="daily-item" onclick="window.checkPin(() => window.claimDailyTask('${t.id}', ${kid.id}))">
-                                    <span>${t.label}</span>
-                                    <span class="daily-pts">+${pts}</span>
-                                 </div>`;
-                    });
+            // Fallback: Versuche Emoji aus BaseTask zu fischen
+            const extractLastNonText = (str) => {
+                if (!str) return null;
+                const stripped = str.replace(/[a-zA-Z0-9\s\.,;:!?()\[\]{}"'\-\/]/g, '').trim();
+                if (stripped.length > 0) {
+                    const chars = [...stripped];
+                    return chars[chars.length - 1];
                 }
-                html += `</div>`;
-                return html;
+                return null;
             };
+            
+            if (taskObj.baseTask) {
+                const found = extractLastNonText(taskObj.baseTask);
+                if (found) return found;
+            }
+            
+            return '✨';
+        }
 
-            grid.innerHTML = renderCol(noelle) + renderCol(levi);
+        window.openDailyTaskDetails = (taskId, kidId) => {
+            const dt = state.dailyTasksConfig.find(t => t.id === taskId);
+            const kid = state.kids.find(k => k.id === kidId);
+            const pts = getTaskPoints(dt.baseTask);
+            const emoji = getSafeEmoji(dt);
+
+            document.getElementById('dd-emoji').innerText = emoji;
+            document.getElementById('dd-title').innerText = dt.label;
+            document.getElementById('dd-pts').innerText = `+${pts} ⭐ für ${kid.name}`;
+            
+            const btn = document.getElementById('dd-confirm-btn');
+            btn.onclick = () => {
+                closeModal('daily-detail-modal');
+                window.checkPin(() => window.claimDailyTask(taskId, kidId));
+            };
+            
+            openModal('daily-detail-modal');
+        };
+
+        function generateDailyHtml(kid, side) {
+            const completedIds = state.dailyState.completed.map(c => c.taskId);
+            const kidsCompletedTasks = state.dailyState.completed.filter(c => c.kidId === kid.id).length;
+            const available = state.dailyTasksConfig.filter(t => !completedIds.includes(t.id) && (t.type === 'shared' || t.kidId === kid.id));
+            
+            let html = `
+                <div class="daily-dashboard">
+                    <div class="daily-header">
+                        <div style="display:flex; flex-direction:column; flex:1;">
+                            <h3>📅 Tagesaufgaben</h3>
+                            <span class="current-datetime" style="font-size:0.65rem; color:#cbd5e1; font-weight:600; margin-top:2px; line-height:1.2;"></span>
+                        </div>
+                        <button class="btn-undo" onclick="window.checkPin(() => window.undoLastDailyTask(${kid.id}))" title="Rückgängig">↺</button>
+                    </div>
+                    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px;">
+            `;
+            
+            if (kidsCompletedTasks >= 5) {
+                html += `<div class="daily-empty" style="color: var(--gold); font-weight: bold; font-size: 0.85rem;">Limit erreicht! (5/5) 🌟</div>`;
+            } else if (available.length === 0) {
+                html += `<div class="daily-empty">Alles erledigt! 🎉</div>`;
+            } else {
+                html += `<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding-top: 5px;">`;
+                available.forEach(t => {
+                    const pts = getTaskPoints(t.baseTask);
+                    const emoji = getSafeEmoji(t);
+                    
+                    html += `<div class="daily-item" onclick="window.openDailyTaskDetails('${t.id}', ${kid.id})" style="flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; width: calc(50% - 4px); max-width: 80px; aspect-ratio: 1/1; gap: 4px;">
+                                <span style="font-size: 1.8rem; line-height: 1; letter-spacing: -2px; margin-bottom: 2px;">${emoji}</span>
+                                <span class="daily-pts" style="margin:0; font-size: 0.75rem;">+${pts}</span>
+                             </div>`;
+                });
+                html += `</div>`;
+            }
+            html += `</div></div>`;
+            return html;
         }
 
         function generateKidHtml(k) {
@@ -1000,41 +1076,45 @@
 
             let html = '';
             
-            if (noelle) html += generateKidHtml(noelle);
+            if (noelle) {
+                html += `
+                <div class="kid-group kid-group-left">
+                    ${generateKidHtml(noelle)}
+                    ${generateDailyHtml(noelle, 'left')}
+                </div>`;
+            }
 
-            html += `
-                <div id="daily-tasks-container" class="daily-dashboard">
-                    <div class="daily-header">
-                        <div style="display:flex; flex-direction:column;">
-                            <h3>📅 Tagesaufgaben</h3>
-                            <span id="current-datetime" style="font-size:0.85rem; color:#cbd5e1; font-weight:600; margin-top:2px;"></span>
-                        </div>
-                        <button class="btn-undo" onclick="window.checkPin(() => window.undoLastDailyTask())">↺ Rückgängig</button>
-                    </div>
-                    <div class="daily-grid" id="daily-grid">
-                        <!-- Wird dynamisch befüllt -->
-                    </div>
-                </div>
-            `;
-
-            if (levi) html += generateKidHtml(levi);
+            if (levi) {
+                html += `
+                <div class="kid-group kid-group-right">
+                    ${generateDailyHtml(levi, 'right')}
+                    ${generateKidHtml(levi)}
+                </div>`;
+            }
 
             state.kids.forEach(k => {
-                if (k.id !== 0 && k.id !== 1) html += generateKidHtml(k);
+                if (k.id !== 0 && k.id !== 1) {
+                    html += `
+                    <div class="kid-group kid-group-left" style="margin-top: 20px;">
+                        ${generateKidHtml(k)}
+                        ${generateDailyHtml(k, 'left')}
+                    </div>`;
+                }
             });
 
             mainLayout.innerHTML = html;
-            
-            renderDailyTasks();
             updateClock(); 
         }
 
         function updateClock() {
-            const clockEl = document.getElementById('current-datetime');
-            if(clockEl) {
+            const els = document.querySelectorAll('.current-datetime');
+            if (els.length > 0) {
                 const now = new Date();
-                const options = { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
-                clockEl.innerText = now.toLocaleString('de-CH', options) + ' Uhr';
+                const options = { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' };
+                const timeOptions = { hour: '2-digit', minute: '2-digit' };
+                const dateStr = now.toLocaleDateString('de-CH', options);
+                const timeStr = now.toLocaleTimeString('de-CH', timeOptions) + ' Uhr';
+                els.forEach(el => el.innerHTML = `${dateStr}<br>${timeStr}`);
             }
         }
         setInterval(updateClock, 1000);
@@ -1045,17 +1125,9 @@
             const newScore = Math.max(0, Math.round((oldScore + v) * 10) / 10);
             k.count = newScore;
             
-            // Korrektur: Trophäen entfernen, wenn Punkte (durch Minus) unter das Ziel fallen
             const step = k.valSmall || 10;
             const maxAck = Math.floor(k.count / step);
             if ((k.ackTens || 0) > maxAck) k.ackTens = maxAck;
-
-            if (v > 0) {
-                const crossedSmall = Math.floor(oldScore / (k.valSmall || 10)) < Math.floor(newScore / (k.valSmall || 10));
-                const crossedBig = Math.floor(oldScore / (k.valBig || 100)) < Math.floor(newScore / (k.valBig || 100));
-                const crossedMega = Math.floor(oldScore / (k.valMega || 300)) < Math.floor(newScore / (k.valMega || 300));
-
-            }
 
             state.history.push({ kidName: k.name, points: v, taskName, timestamp: Date.now() });
             if (state.history.length > 200) state.history.shift(); 
@@ -1190,7 +1262,8 @@
                 return `
                 <div class="config-card" style="padding: 15px; margin-bottom: 10px;">
                     <div style="display:flex; gap: 10px; margin-bottom: 10px;">
-                        <input id="dtl-${i}" value="${dt.label}" placeholder="Tagesaufgabe Anzeigename" style="margin:0; flex:1;">
+                        <input id="dtl-${i}" value="${dt.label}" placeholder="Tagesaufgabe Name" style="margin:0; flex:1;">
+                        <input id="dte-${i}" value="${dt.emoji || ''}" placeholder="Emojis (z.B. 🐹)" style="margin:0; width: 100px; text-align: center; font-size: 1.2rem;">
                         <button onclick="window.removeDailyTaskConfig(${i})" style="background:rgba(239,68,68,0.2); border:1px solid #ef4444; color:#fca5a5; border-radius:10px; width:45px; cursor:pointer; transition: transform 0.2s;">🗑</button>
                     </div>
                     
@@ -1224,7 +1297,8 @@
                 label: 'Neue Tagesaufgabe',
                 baseTask: state.tasks[0]?.name || '',
                 type: 'shared',
-                kidId: 0
+                kidId: 0,
+                emoji: '✨'
             });
             window.renderDailyTasksConfig();
         };
@@ -1261,6 +1335,7 @@
                 const labelEl = document.getElementById(`dtl-${i}`);
                 if(labelEl) {
                     dt.label = labelEl.value;
+                    dt.emoji = document.getElementById(`dte-${i}`).value;
                     dt.baseTask = document.getElementById(`dtb-${i}`).value;
                     dt.type = document.getElementById(`dtt-${i}`).value;
                     dt.kidId = parseInt(document.getElementById(`dtk-${i}`).value);
