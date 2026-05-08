@@ -91,11 +91,11 @@
         }
 
         #app {
-            max-width: 100%; /* Verhindert Ränder und füllt den Bildschirm horizontal komplett aus */
+            max-width: 100%; 
             margin: 0 auto;
             width: 100%;
             flex: 1;
-            min-height: 0; /* Flexbox Hack für Child-Constraints */
+            min-height: 0; 
             padding-bottom: 5px; 
             z-index: 10;
             display: flex;
@@ -104,7 +104,7 @@
 
         header { 
             display: flex; justify-content: space-between; align-items: center; padding: 0 0 10px 0; 
-            flex-shrink: 0; /* Verhindert das Quetschen des Headers */
+            flex-shrink: 0; 
         }
         
         .header-left {
@@ -143,82 +143,27 @@
         .btn-info:active { transform: scale(0.95); }
         .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; font-size: 1.1rem; }
 
-        /* --- LAYOUT MIT ANGEDOCKTEN KARTEN (KID GROUP) --- */
+        /* --- LAYOUT MIT INTEGRIERTEN KARTEN --- */
         .main-layout { 
             display: grid; 
-            grid-template-columns: 1fr; 
             gap: 20px; 
             flex: 1; 
             min-height: 0; 
+            overflow-y: auto; /* Erlaubt scrollen innerhalb des Layouts falls Displays zu klein sind */
+            padding-bottom: 10px;
         }
         
-        .kid-group { 
-            display: flex; 
-            height: 100%; 
-            min-height: 0; 
-            animation: floatCard 6s ease-in-out infinite; 
-        }
-        .kid-group:nth-child(even) { animation-delay: -3s; }
-        @keyframes floatCard { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
-
         @media (min-width: 850px) {
             .main-layout { 
-                grid-template-columns: 1fr 1fr; 
-                grid-template-rows: minmax(0, 1fr); /* Blockiert Überlaufen in die Höhe */
+                grid-template-columns: 1fr 1fr; /* Links Noelle, Rechts Levi - genau 50/50 */
+                overflow-y: hidden; /* Auf großen iPads passt alles ohne scrollen */
             }
-            .kid-group-left .kid-card { border-radius: 25px 0 0 25px !important; border-right: none !important; }
-            .kid-group-left .daily-dashboard { border-radius: 0 25px 25px 0 !important; border-left: none !important; }
-            
-            .kid-group-right .daily-dashboard { border-radius: 25px 0 0 25px !important; border-right: none !important; }
-            .kid-group-right .kid-card { border-radius: 0 25px 25px 0 !important; border-left: none !important; }
         }
-
-        @media (max-width: 849px) {
-            .main-layout {
-                grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); /* 50/50 Höhenverteilung erzwingen */
-            }
-            .kid-group-left { flex-direction: column; }
-            .kid-group-left .kid-card { border-radius: 25px 25px 0 0 !important; border-bottom: none !important; flex: 1; min-height: 0; }
-            .kid-group-left .daily-dashboard { border-radius: 0 0 25px 25px !important; border-top: none !important; width: 100% !important; flex: 0.6; min-height: 0; }
-            
-            .kid-group-right { flex-direction: column-reverse; }
-            .kid-group-right .daily-dashboard { border-radius: 25px 25px 0 0 !important; border-bottom: none !important; width: 100% !important; flex: 0.6; min-height: 0; }
-            .kid-group-right .kid-card { border-radius: 0 0 25px 25px !important; border-top: none !important; flex: 1; min-height: 0; }
-        }
-
-        /* --- TAGESAUFGABEN DOCKED-DASHBOARD --- */
-        .daily-dashboard {
-            background: rgba(15, 23, 42, 0.6); padding: 10px;
-            border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 10px 30px rgba(0,0,0,0.4);
-            backdrop-filter: blur(10px); display: flex; flex-direction: column; 
-            width: 200px; flex-shrink: 0; z-index: 2; position: relative;
-            min-height: 0;
-        }
-        .daily-header { 
-            display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; 
-            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; 
-            flex-shrink: 0; 
-        }
-        .daily-header h3 { margin: 0; font-size: 0.95rem; color: var(--gold); font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); line-height: 1.1; }
-        .btn-undo { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid #ef4444; padding: 2px 6px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.7rem; transition: transform 0.2s; margin-left: 5px; }
-        .btn-undo:active { transform: scale(0.9); }
-        
-        .daily-item {
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px;
-            padding: 4px 6px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
-            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); line-height: 1.1; min-height: 32px;
-            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
-        }
-        .daily-item:hover { transform: scale(1.03) translateY(-2px); background: rgba(255,255,255,0.15); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
-        .daily-item:active { transform: scale(0.95); }
-        
-        .daily-item-text { flex: 1; padding-right: 4px; hyphens: auto; -webkit-hyphens: auto; word-break: break-word; text-align: left; }
-        .daily-pts { background: var(--blue); color: #000; padding: 2px 4px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
-        .daily-empty { text-align: center; color: rgba(255,255,255,0.4); font-size: 0.8rem; font-style: italic; margin-top: 5px; }
 
         /* --- KID CARDS --- */
         .kid-card {
-            background: var(--card-bg); padding: 15px;
+            background: var(--card-bg); padding: 12px;
+            border-radius: 25px;
             border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 20px rgba(255,255,255,0.05);
             backdrop-filter: blur(15px); display: flex; flex-direction: column;
             position: relative; overflow: hidden; flex: 1; min-width: 0; min-height: 0; z-index: 1;
@@ -230,47 +175,63 @@
         .kid-card.theme-1 { background: linear-gradient(135deg, rgba(30, 64, 175, 0.8), rgba(17, 24, 39, 0.95)); border-color: rgba(96, 165, 250, 0.4); box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 30px rgba(59, 130, 246, 0.3); }
         .kid-card.theme-1::before { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 0; background-image: linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px), radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 70%); background-size: 30px 30px, 30px 30px, 100% 100%; }
 
-        .kid-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-shrink: 0; }
-        .kid-info-box { display: flex; align-items: center; gap: 12px; }
-        .kid-header h2 { margin: 0; font-size: 2.2rem; font-weight: 800; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        .kid-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-shrink: 0; }
+        .kid-info-box { display: flex; align-items: center; gap: 10px; }
+        .kid-header h2 { margin: 0; font-size: 1.8rem; font-weight: 800; line-height: 1.1; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
         
-        .total-score-badge { background: linear-gradient(135deg, var(--gold), #f59e0b); color: #000; font-size: 1.5rem; font-weight: 900; padding: 4px 15px; border-radius: 15px; box-shadow: 0 4px 10px rgba(251, 191, 36, 0.4); white-space: nowrap; transition: transform 0.3s; min-width: 120px; text-align: center; display: inline-block; }
+        .total-score-badge { background: linear-gradient(135deg, var(--gold), #f59e0b); color: #000; font-size: 1.3rem; font-weight: 900; padding: 2px 10px; border-radius: 12px; box-shadow: 0 4px 10px rgba(251, 191, 36, 0.4); white-space: nowrap; transition: transform 0.3s; min-width: 100px; text-align: center; display: inline-block; }
         .btn-kid-reset { background: rgba(255, 255, 255, 0.05); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1); padding: 4px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
         .btn-kid-reset:active { transform: scale(0.9); }
-        .avatar-btn { font-size: 50px; background: rgba(255,255,255,0.08); border-radius: 20px; padding: 8px; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 6px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; min-width: 80px; min-height: 80px; transition: transform 0.2s; }
+        .avatar-btn { font-size: 35px; background: rgba(255,255,255,0.08); border-radius: 15px; padding: 5px; cursor: pointer; border: 2px solid rgba(255,255,255,0.15); box-shadow: 0 6px 15px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; min-width: 60px; min-height: 60px; transition: transform 0.2s; }
         .avatar-btn:active { transform: scale(0.9) !important; }
         
+        /* TALLY BOX (STERNE) - Verkleinert */
         .tally-box { 
             background: rgba(0,0,0,0.3); border-radius: 20px; 
-            padding: 15px; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; 
-            gap: 8px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 15px; 
-            flex: 1; min-height: 0; overflow-y: auto; 
+            padding: 8px 10px; display: flex; flex-wrap: wrap; align-content: flex-start; justify-content: center; 
+            gap: 6px; border: 1px solid rgba(255,255,255,0.05); margin-bottom: 10px; 
+            flex: 1; min-height: 60px; max-height: 120px; overflow-y: auto; 
         }
 
-        .star-icon { font-size: 2.2rem; color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); opacity: 0; transform: scale(0); animation: popStar 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        .star-icon { font-size: 1.8rem; color: var(--gold); text-shadow: 0 0 12px var(--gold-glow); opacity: 0; transform: scale(0); animation: popStar 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
         @keyframes popStar { 0% { opacity: 0; transform: scale(0.1) rotate(-30deg); } 70% { transform: scale(1.3) rotate(15deg); } 100% { opacity: 1; transform: scale(1) rotate(0deg); } }
         
-        .btn-claim { flex-shrink: 0; background: linear-gradient(135deg, var(--green), #16a34a); color: white; border: none; padding: 12px; border-radius: 15px; font-weight: 800; font-size: 1.3rem; cursor: pointer; width: 100%; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4); animation: pulseBtn 2s infinite; font-family: 'Baloo 2'; border: 2px solid #bbf7d0; transition: transform 0.2s; }
+        .btn-claim { flex-shrink: 0; background: linear-gradient(135deg, var(--green), #16a34a); color: white; border: none; padding: 10px; border-radius: 12px; font-weight: 800; font-size: 1.2rem; cursor: pointer; width: 100%; margin-bottom: 10px; box-shadow: 0 5px 15px rgba(34, 197, 94, 0.4); animation: pulseBtn 2s infinite; font-family: 'Baloo 2'; border: 2px solid #bbf7d0; transition: transform 0.2s; }
         .btn-claim:active { transform: scale(0.95); animation: none; }
         @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.03); } 100% { transform: scale(1); } }
 
-        .progress-section { flex-shrink: 0; background: rgba(0,0,0,0.25); padding: 10px; border-radius: 15px; margin-bottom: 10px; }
-        .progress-title { font-size: 0.95rem; color: #f8fafc; font-weight: 800; margin: 0 0 8px 0; text-align: center; }
-        .progress-item { margin-bottom: 8px; }
+        /* PROGRESS SECTION & TAGESAUFGABEN (Beide in Boxen im gleichen Stil) */
+        .progress-section { flex-shrink: 0; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 15px; margin-bottom: 8px; }
+        .progress-title { font-size: 0.9rem; color: #f8fafc; font-weight: 800; margin: 0 0 6px 0; text-align: center; }
+        .progress-item { margin-bottom: 6px; }
         .progress-item:last-child { margin-bottom: 0; }
-        .progress-label { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.85rem; color: #f8fafc; font-weight: 700; margin-bottom: 4px; }
-        .goal-name { font-size: 0.95rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .stars-left { background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 10px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.1); font-weight: 800; }
+        .progress-label { display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; color: #f8fafc; font-weight: 700; margin-bottom: 2px; }
+        .goal-name { font-size: 0.9rem; font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .stars-left { background: rgba(0,0,0,0.4); padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; border: 1px solid rgba(255,255,255,0.1); font-weight: 800; }
         .stars-left.done { background: var(--success); color: white; border-color: #bbf7d0; animation: pulseBtn 2s infinite; box-shadow: 0 0 10px rgba(34, 197, 94, 0.5); }
-        .progress-bg { background: rgba(0,0,0,0.6); height: 18px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); box-shadow: inset 0 3px 6px rgba(0,0,0,0.6); }
+        .progress-bg { background: rgba(0,0,0,0.6); height: 16px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(255,255,255,0.15); box-shadow: inset 0 3px 6px rgba(0,0,0,0.6); }
         .progress-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); animation: moveStripes 2s linear infinite; background-size: 30px 30px; background-image: linear-gradient(45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%, transparent); }
         
         .fill-small { background-color: var(--pink); box-shadow: 0 0 10px var(--pink-glow); }
         .fill-big { background-color: var(--gold); box-shadow: 0 0 10px var(--gold-glow); }
         .fill-mega { background-color: var(--purple); box-shadow: 0 0 10px var(--purple-glow); }
 
+        .btn-undo { background: rgba(239, 68, 68, 0.1); color: #fca5a5; border: 1px solid #ef4444; padding: 2px 8px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.8rem; transition: transform 0.2s; margin-left: 5px; }
+        .btn-undo:active { transform: scale(0.9); }
+        
+        .daily-item {
+            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px;
+            padding: 6px 4px; font-size: 0.75rem; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+        }
+        .daily-item:hover { transform: scale(1.05) translateY(-2px); background: rgba(255,255,255,0.15); box-shadow: 0 4px 10px rgba(0,0,0,0.3); }
+        .daily-item:active { transform: scale(0.95); }
+        
+        .daily-pts { background: var(--blue); color: #000; padding: 2px 6px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; white-space: nowrap; }
+
         .controls { flex-shrink: 0; display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: auto; }
-        .btn-action { border: none; border-radius: 15px; font-weight: 800; font-size: 2.2rem; cursor: pointer; height: 65px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(0,0,0,0.3); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .btn-action { border: none; border-radius: 15px; font-weight: 800; font-size: 2.2rem; cursor: pointer; height: 55px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 15px rgba(0,0,0,0.3); transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
         .btn-action:hover { transform: scale(1.05); }
         .btn-action:active { transform: scale(0.9); }
         .btn-minus { background: #334155; color: #94a3b8; }
@@ -637,21 +598,17 @@
 
         // --- BOMBENSICHERE EMOJI-ERKENNUNG ---
         window.getSafeEmoji = function(taskObj) {
-            // 1. Manuell in den Einstellungen gesetzt?
             if (taskObj.emoji && taskObj.emoji.trim() !== '') {
                 return taskObj.emoji.trim();
             }
 
-            // 2. Versuch, echte Emojis aus der Base-Aufgabe zu fischen (sichere Regex-Methode)
             if (taskObj.baseTask) {
-                // Diese Regex findet alle Emojis im Text und filtert normale Buchstaben heraus
                 const match = taskObj.baseTask.match(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu);
                 if (match && match.length > 0) {
                     return match.join('');
                 }
             }
             
-            // 3. Wenn alles fehlschlägt, geben wir aufgrund der ID harte Emojis vor (Garantiert keine leeren Knöpfe mehr!)
             if (taskObj.id.includes('mf')) return '🐹🌅';
             if (taskObj.id.includes('em') || taskObj.id.includes('ea')) return '🧽☀️';
             if (taskObj.id.includes('ei')) return '👟';
@@ -659,9 +616,8 @@
             if (taskObj.id.includes('so')) return '🛋️';
             if (taskObj.id.includes('hl') || taskObj.id.includes('hn')) return '📚';
 
-            return '✨'; // Absolutes Fallback
+            return '✨'; 
         };
-
 
         // --- ZENTRALE FLIEGENDE STERNE ANIMATION ---
         function triggerFlyingStarAnimation(kidId, points, taskName, callback) {
@@ -677,16 +633,7 @@
                 "Spektakulär!", "Vorbildlich!", "Prächtig!", "Glanzleistung!", "Meisterleistung!", 
                 "Unschlagbar!", "Weltklasse!", "Außergewöhnlich!", "Atemberaubend!", "Top!", 
                 "Tiptop!", "Einfach genial!", "Echt stark!", "Super Leistung!", "Tolles Ergebnis!", 
-                "Sehr gut!", "Klasse gemacht!", "Echt krass!", "Unfassbar gut!", "Richtig toll!", 
-                "Wahnsinns Leistung!", "Einfach top!", "Unglaubliche Arbeit!", "Einfach super!", 
-                "Voll cool!", "Richtig gut!", "Super Einsatz!", "Tolles Engagement!", "Einfach perfekt!", 
-                "Großartig!", "Echt super!", "Wirklich toll!", "Riesige Klasse!", "Super Job!", 
-                "Hervorragende Arbeit!", "Wirklich spitze!", "Tolle Leistung!", "Besser geht's nicht!", 
-                "Einfach wunderbar!", "Richtig stark!", "Fantastische Arbeit!", "Supercool!", 
-                "Mega gut!", "Richtig klasse!", "Einfach fantastisch!", "Unbeschreiblich gut!", 
-                "Echt fantastisch!", "Super toll!", "Wahnsinnig gut!", "Einfach brillant!", 
-                "Richtig super!", "Tolle Sache!", "Superstark!", "Einfach meisterhaft!", 
-                "Richtig spitze!", "Megastark!", "Einfach klasse!", "Superb!", "Einfach himmlisch!"
+                "Sehr gut!", "Klasse gemacht!", "Echt krass!", "Unfassbar gut!", "Richtig toll!"
             ];
             
             const randomCompliment = COMPLIMENTS[Math.floor(Math.random() * COMPLIMENTS.length)];
@@ -858,8 +805,6 @@
                     if(!state.dailyTasksConfig || state.dailyTasksConfig.length === 0) {
                         state.dailyTasksConfig = [...DEFAULT_DAILY_TASKS];
                     } else {
-                        // AUTO-REPARATUR FÜR DEIN IPAD: 
-                        // Wir zwingen die Datenbank, fehlerhafte Emojis sofort wieder mit den Standard-Werten zu überschreiben.
                         state.dailyTasksConfig.forEach(dt => {
                             const def = DEFAULT_DAILY_TASKS.find(d => d.id === dt.id);
                             if (def && (!dt.emoji || [...(dt.emoji || '')].length < 2)) {
@@ -979,39 +924,35 @@
             openModal('daily-detail-modal');
         };
 
-        function generateDailyHtml(kid, side) {
+        // --- NEU: Tagesaufgaben direkt im Profil ---
+        function generateDailyHtml(kid) {
             const completedIds = state.dailyState.completed.map(c => c.taskId);
             const kidsCompletedTasks = state.dailyState.completed.filter(c => c.kidId === kid.id).length;
             const available = state.dailyTasksConfig.filter(t => !completedIds.includes(t.id) && (t.type === 'shared' || t.kidId === kid.id));
             
             let html = `
-                <div class="daily-dashboard">
-                    <div class="daily-header">
-                        <div style="display:flex; flex-direction:column; flex:1;">
-                            <h3>📅 Tagesaufgaben</h3>
-                            <span class="current-datetime" style="font-size:0.65rem; color:#cbd5e1; font-weight:600; margin-top:2px; line-height:1.2;"></span>
-                        </div>
+                <div class="progress-section" style="margin-bottom: 10px; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px;">
+                        <h3 style="margin: 0; font-size: 0.95rem; color: var(--gold); font-weight: 800; text-shadow: 0 2px 4px rgba(0,0,0,0.5);">📅 Tagesaufgaben</h3>
                         <button class="btn-undo" onclick="window.checkPin(() => window.undoLastDailyTask(${kid.id}))" title="Rückgängig">↺</button>
                     </div>
-                    <div style="flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 5px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px; justify-content: center;">
             `;
             
             if (kidsCompletedTasks >= 5) {
-                html += `<div class="daily-empty" style="color: var(--gold); font-weight: bold; font-size: 0.85rem;">Limit erreicht! (5/5) 🌟</div>`;
+                html += `<div style="color: var(--gold); font-weight: bold; font-size: 0.85rem; padding: 5px;">Limit erreicht! (5/5) 🌟</div>`;
             } else if (available.length === 0) {
-                html += `<div class="daily-empty">Alles erledigt! 🎉</div>`;
+                html += `<div style="color: rgba(255,255,255,0.4); font-size: 0.85rem; padding: 5px; font-style: italic;">Alles erledigt! 🎉</div>`;
             } else {
-                html += `<div style="display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; padding-top: 5px;">`;
                 available.forEach(t => {
                     const pts = getTaskPoints(t.baseTask);
                     const emoji = window.getSafeEmoji(t);
                     
-                    html += `<div class="daily-item" onclick="window.openDailyTaskDetails('${t.id}', ${kid.id})" style="flex-direction: column; align-items: center; justify-content: center; padding: 10px 5px; width: calc(50% - 4px); max-width: 80px; aspect-ratio: 1/1; gap: 4px;">
-                                <span style="font-size: 1.6rem; line-height: 1.1; margin-bottom: 2px; white-space: nowrap; letter-spacing: 0;">${emoji}</span>
-                                <span class="daily-pts" style="margin:0; font-size: 0.75rem;">+${pts}</span>
+                    html += `<div class="daily-item" onclick="window.openDailyTaskDetails('${t.id}', ${kid.id})" style="flex-direction: column; align-items: center; justify-content: center; padding: 6px 4px; flex: 1 1 55px; max-width: 75px; aspect-ratio: 1/1; gap: 2px;">
+                                <span style="font-size: 1.6rem; line-height: 1; margin-bottom: 2px; white-space: nowrap; letter-spacing: 0;">${emoji}</span>
+                                <span class="daily-pts" style="margin:0; font-size: 0.7rem;">+${pts}</span>
                              </div>`;
                 });
-                html += `</div>`;
             }
             html += `</div></div>`;
             return html;
@@ -1050,7 +991,7 @@
                                   </div>`;
                 } else {
                     for(let i=0; i<ackTens; i++) {
-                        tallyHtml += `<div class="star-icon" style="font-size:2.2rem; filter: drop-shadow(0 0 5px rgba(251, 191, 36, 0.5)); animation-delay: ${i * 0.08}s;">🏆</div>`;
+                        tallyHtml += `<div class="star-icon" style="animation-delay: ${i * 0.08}s;">🏆</div>`;
                     }
                 }
                 if (visualSmallPoints > 0 || unclaimed > 0) {
@@ -1074,6 +1015,7 @@
                 claimHtml = `<button class="btn-claim" onclick="window.acknowledgeTen(${k.id})">${btnText}</button>`;
             }
 
+            // Alles wird im Profil gerendert!
             return `
                 <div class="kid-card theme-${k.id}">
                     <div class="kid-header">
@@ -1106,6 +1048,9 @@
                         </div>
                     </div>
 
+                    <!-- TAGESAUFGABEN SIND JETZT HIER -->
+                    ${generateDailyHtml(k)}
+
                     <div class="controls">
                         <button class="btn-action btn-minus" onclick="window.checkPin(()=>window.updateCount(${k.id}, -0.5, 'Abzug'))">-</button>
                         <button class="btn-action btn-plus" onclick="window.checkPin(()=>window.openAddPointsModal(${k.id}))">+</button>
@@ -1115,40 +1060,8 @@
 
         function render() {
             const mainLayout = document.getElementById('main-layout');
-            mainLayout.innerHTML = '';
-            
-            const noelle = state.kids.find(k => k.id === 0);
-            const levi = state.kids.find(k => k.id === 1);
-
-            let html = '';
-            
-            if (noelle) {
-                html += `
-                <div class="kid-group kid-group-left">
-                    ${generateKidHtml(noelle)}
-                    ${generateDailyHtml(noelle, 'left')}
-                </div>`;
-            }
-
-            if (levi) {
-                html += `
-                <div class="kid-group kid-group-right">
-                    ${generateDailyHtml(levi, 'right')}
-                    ${generateKidHtml(levi)}
-                </div>`;
-            }
-
-            state.kids.forEach(k => {
-                if (k.id !== 0 && k.id !== 1) {
-                    html += `
-                    <div class="kid-group kid-group-left" style="margin-top: 20px;">
-                        ${generateKidHtml(k)}
-                        ${generateDailyHtml(k, 'left')}
-                    </div>`;
-                }
-            });
-
-            mainLayout.innerHTML = html;
+            // Einfach eine Schleife über alle Kinder - die Funktionen erledigen den Rest
+            mainLayout.innerHTML = state.kids.map(k => generateKidHtml(k)).join('');
             updateClock(); 
         }
 
@@ -1408,7 +1321,6 @@
             closeModal('config-modal'); render(); syncToCloud(); showMessage("Einstellungen gespeichert! 💾");
         };
 
-        // SUPERCHARGED: Repariert bei Knopfdruck alle fehlenden/kaputten Emojis auf die Standardwerte
         window.loadDefaultTasks = () => { 
             DEFAULT_TASKS_POOL.forEach(d => { 
                 if(!state.tasks.some(t => t.name === d.name)) {
@@ -1429,7 +1341,6 @@
             window.renderDailyTasksConfig();
         };
 
-        /* Weitere Modal- und Pin-Funktionen (Historie, Tasks-Info etc.) */
         window.openHistoryModal = () => {
             const list = document.getElementById('history-list');
             list.innerHTML = state.history.slice().reverse().map(h => {
@@ -1531,7 +1442,6 @@
 
         initPinPad();
         
-        // CSS Animation für Shake (Fehlerhafte PIN) dynamisch hinzufügen
         const style = document.createElement('style');
         style.innerHTML = `@keyframes shake { 10%, 90% { transform: translate3d(-2px, 0, 0); } 20%, 80% { transform: translate3d(3px, 0, 0); } 30%, 50%, 70% { transform: translate3d(-5px, 0, 0); } 40%, 60% { transform: translate3d(5px, 0, 0); } }`;
         document.head.appendChild(style);
