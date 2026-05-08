@@ -362,7 +362,10 @@
             <div id="dd-emoji" style="font-size: 5rem; margin-bottom: 5px; filter: drop-shadow(0 4px 10px rgba(0,0,0,0.5)); letter-spacing: -5px;"></div>
             <h2 id="dd-title" style="margin: 0 0 10px 0; color: white; font-size: 1.8rem; line-height: 1.2;"></h2>
             <div id="dd-pts" style="font-size: 1.4rem; color: var(--gold); font-weight: 800; margin-bottom: 25px; text-shadow: 0 2px 5px rgba(0,0,0,0.5);"></div>
-            <button id="dd-confirm-btn" class="btn-claim" style="font-size: 1.5rem; padding: 15px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4);">Erledigt! ✅</button>
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button id="dd-confirm-btn" class="btn-claim" style="font-size: 1.5rem; padding: 15px; box-shadow: 0 8px 20px rgba(34, 197, 94, 0.4); margin-bottom: 0;">Erledigt! ✅</button>
+                <button id="dd-skip-btn" style="background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid #ef4444; padding: 12px; border-radius: 12px; font-weight: bold; cursor: pointer; font-size: 1.1rem; font-family: 'Baloo 2'; transition: transform 0.2s; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.2);" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'" onmouseleave="this.style.transform='scale(1)'" ontouchstart="this.style.transform='scale(0.95)'" ontouchend="this.style.transform='scale(1)'">Mamma/Papa hat's gemacht 🗑️</button>
+            </div>
         </div>
     </div>
 
@@ -940,8 +943,39 @@
                 closeModal('daily-detail-modal');
                 window.checkPin(() => window.claimDailyTask(taskId, kidId));
             };
+
+            const skipBtn = document.getElementById('dd-skip-btn');
+            skipBtn.onclick = () => {
+                closeModal('daily-detail-modal');
+                window.checkPin(() => window.skipDailyTask(taskId, kidId));
+            };
             
             openModal('daily-detail-modal');
+        };
+
+        window.skipDailyTask = (taskId, kidId) => {
+            const dt = state.dailyTasksConfig.find(t => t.id === taskId);
+            const kid = state.kids.find(k => k.id === kidId);
+            
+            state.dailyState.completed.push({ 
+                taskId: dt.id, 
+                kidId: kidId, 
+                points: 0, 
+                name: dt.label + ' (Eltern)', 
+                timestamp: Date.now(),
+                skipped: true
+            });
+            
+            state.history.push({ 
+                kidName: kid.name, 
+                points: 0, 
+                taskName: `Entfernt: ${dt.label}`, 
+                timestamp: Date.now() 
+            });
+            if (state.history.length > 200) state.history.shift(); 
+            
+            render(); syncToCloud();
+            showMessage("Aufgabe gelöscht! 🗑️");
         };
 
         // --- NEU: Tagesaufgaben direkt im Profil ---
