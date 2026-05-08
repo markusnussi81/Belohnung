@@ -580,14 +580,15 @@
             pin: PIN 
         };
 
-        const config = (typeof __firebase_config !== 'undefined' && __firebase_config) ? JSON.parse(__firebase_config) : MY_CONFIG;
+        const isSandbox = typeof __firebase_config !== 'undefined' && __firebase_config;
+        const config = isSandbox ? JSON.parse(__firebase_config) : MY_CONFIG;
         const app = initializeApp(config);
         const db = getFirestore(app);
-        const auth = getAuth(app); // IMMER Authentifizierung initialisieren
+        let auth = null;
+        let user = null;
+        if (isSandbox) auth = getAuth(app);
         
-        let user = null; // Diese Variable hat gefehlt!
-        
-        const appId = (typeof __app_id !== 'undefined' && __app_id) ? __app_id : 'default-app-id';
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         let lastUnlockTime = 0, currentPin = "", pendingAction = null, activeKidForIcon = null, activeKidForPoints = null;
         let firebaseReady = false;
@@ -778,25 +779,29 @@
 
         async function initSync() {
             setStatus('connecting');
+            
             try {
-                // IMMER authentifizieren, damit die Firestore-Security-Regeln (auch lokal!) greifen.
-                const initAuth = async () => {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
-                };
-                await initAuth();
-                
-                onAuthStateChanged(auth, (u) => {
-                    user = u;
-                    if (user) {
-                        startFirestore();
-                    } else {
-                        firebaseReady = false;
-                    }
-                });
+                if (isSandbox) {
+                    const initAuth = async () => {
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                            await signInWithCustomToken(auth, __initial_auth_token);
+                        } else {
+                            await signInAnonymously(auth);
+                        }
+                    };
+                    await initAuth();
+                    
+                    onAuthStateChanged(auth, (u) => {
+                        user = u;
+                        if (user) {
+                            startFirestore();
+                        } else {
+                            firebaseReady = false;
+                        }
+                    });
+                } else {
+                    startFirestore();
+                }
             } catch (e) {
                 console.error("Firebase Init Error:", e);
                 setStatus('offline');
@@ -807,7 +812,7 @@
 
         function startFirestore() {
             if (firebaseReady) return;
-            if (!user) return; // Unbedingt sicherstellen, dass User angemeldet ist
+            if (isSandbox && !user) return;
             
             firebaseReady = true;
             const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
@@ -844,61 +849,23 @@
                     state.dailyTasksConfig = [...DEFAULT_DAILY_TASKS];
                     state.dailyState = { date: getTodayStr(), completed: [] };
                     state.pin = PIN;
-                    setDoc(docRef, state).catch(e => {
-                        console.error("Initial setDoc Error:", e);
-                        if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
-                            showPermissionError();
-                        }
-                    });
+                    setDoc(docRef, state);
                     render();
                 }
             }, (err) => {
                 console.error("Firestore Error:", err);
-                if (err.code === 'permission-denied' || (err.message && err.message.includes('permissions'))) {
-                    showPermissionError();
-                } else {
-                    setStatus('offline');
-                    document.getElementById('loading-screen').style.display = 'none';
-                    render();
-                }
+                setStatus('offline');
+                document.getElementById('loading-screen').style.display = 'none';
+                render();
             });
         }
 
-        function showPermissionError() {
-            const ls = document.getElementById('loading-screen');
-            ls.style.display = 'flex';
-            ls.innerHTML = `
-                <div style="text-align:center; padding: 25px; max-width: 90%; width: 400px; background: var(--card-bg); border-radius: 25px; border: 2px solid #ef4444; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
-                    <h2 style="color: #ef4444; margin-top:0;">⚠️ Zugriff blockiert</h2>
-                    <p style="color: white; font-weight:bold;">Deine Firebase Security Rules verbieten das Lesen/Schreiben.</p>
-                    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">Bitte öffne deine Firebase Console &rarr; <b>Firestore Database</b> &rarr; <b>Rules</b> und ersetze den Inhalt durch:</p>
-                    <pre style="background: rgba(0,0,0,0.6); padding: 15px; border-radius: 15px; text-align: left; color: #4ade80; font-size: 0.8rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1); font-family: monospace;">
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-                    </pre>
-                    <button onclick="location.reload()" style="padding: 12px 25px; margin-top: 15px; border-radius: 15px; background: var(--blue); color: #000; border: none; font-weight: 800; cursor: pointer; font-family: 'Baloo 2'; font-size: 1.1rem; width: 100%;">Neu laden</button>
-                </div>
-            `;
-        }
-
         async function syncToCloud() {
-            if (!firebaseReady || !user) return;
+            if (!firebaseReady || (isSandbox && !user)) return;
             try {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'sync', 'state');
                 await setDoc(docRef, state);
-            } catch (e) { 
-                console.error("Sync Save Error:", e); 
-                setStatus('offline');
-                if (e.code === 'permission-denied' || (e.message && e.message.includes('permissions'))) {
-                    showPermissionError();
-                }
-            }
+            } catch (e) { console.error("Sync Save Error:", e); setStatus('offline'); }
         }
 
         function getTaskPoints(baseTaskName) {
