@@ -10,7 +10,7 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#1e1b4b">
     
-    <title>Kids Star Tracker Pro v5.6</title>
+    <title>Kids Star Tracker Pro v5.7</title>
     
     <!-- Confetti Library -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -337,7 +337,7 @@
                 <h1>STAR TRACKER</h1>
                 <div class="designer-credit">Design by Markus Nussi</div>
                 <div class="version-bar">
-                    <span>v5.6 MULTIDEVICE</span>
+                    <span>v5.7 MULTIDEVICE</span>
                     <div id="status-dot" class="status-dot"></div>
                     <div id="unlock-status-container" style="margin-left: 6px; display: flex; align-items: center;"></div>
                 </div>
@@ -1022,7 +1022,7 @@
 
         function generateKidHtml(k) {
             const pinToUse = k.id === 0 ? '2404' : (k.id === 1 ? '2904' : state.pin);
-            const pinTitle = `Geburtsdatum ${k.name}`;
+            const pinTitle = `Geburtsdatum ${k.name} (oder Eltern-PIN)`;
 
             const count = Math.round((k.count || 0) * 10) / 10;
             
@@ -1219,6 +1219,11 @@
             k.ackTens = (k.ackTens || 0) + 1; 
             confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 }, zIndex: 3000 });
             showMessage("🎉 Belohnung abgeholt! Trophäe gesichert! 🏆");
+            
+            // Historien-Eintrag für kleine Belohnung
+            state.history.push({ kidName: k.name, points: 0, taskName: `🎁 Etappenziel eingelöst (${k.sGoal})`, timestamp: Date.now(), isReward: true });
+            if (state.history.length > 200) state.history.shift();
+            
             render(); syncToCloud(); 
         };
 
@@ -1229,11 +1234,16 @@
                 k.ackBig = (k.ackBig || 0) + 1;
                 confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#fbbf24', '#f472b6'], zIndex: 3000 });
                 showMessage(`🎉 Großes Ziel erreicht & eingelöst! 🏆`);
+                // Historien-Eintrag für großes Ziel
+                state.history.push({ kidName: k.name, points: 0, taskName: `🏆 Großes Ziel eingelöst (${k.bGoal})`, timestamp: Date.now(), isReward: true });
             } else if (type === 'mega') {
                 k.ackMega = (k.ackMega || 0) + 1;
                 confetti({ particleCount: 200, spread: 120, origin: { y: 0.5 }, colors: ['#a855f7', '#38bdf8', '#facc15'], zIndex: 3000 });
                 showMessage(`💎 MEGA Ziel erreicht & eingelöst!!! 🌟`);
+                // Historien-Eintrag für Mega Ziel
+                state.history.push({ kidName: k.name, points: 0, taskName: `💎 MEGA Ziel eingelöst (${k.megaGoal})`, timestamp: Date.now(), isReward: true });
             }
+            if (state.history.length > 200) state.history.shift();
             render(); syncToCloud();
         };
 
@@ -1482,11 +1492,19 @@
             list.innerHTML = state.history.slice().reverse().map(h => {
                 const d = new Date(h.timestamp);
                 const isAbzug = h.points < 0;
+                const isReward = h.isReward === true;
+                
+                // Styling für Belohnungen vs. normale Punkte
+                const colorLeft = isReward ? 'var(--gold)' : (isAbzug ? '#ef4444' : 'var(--blue)');
+                const colorName = isAbzug ? '#ef4444' : 'var(--gold)';
+                const colorPts = isReward ? 'var(--gold)' : (isAbzug ? '#ef4444' : 'var(--green)');
+                const ptsText = isReward ? '🎁 Eingelöst' : `${isAbzug ? '' : '+'}${h.points} ⭐`;
+                
                 return `
-                <div class="history-entry" style="border-left: 4px solid ${isAbzug ? '#ef4444' : 'var(--blue)'};">
+                <div class="history-entry" style="border-left: 4px solid ${colorLeft};">
                     <div class="history-top">
-                        <span style="font-weight: 800; color: ${isAbzug ? '#ef4444' : 'var(--gold)'};">${h.kidName}</span>
-                        <span class="history-pts" style="color: ${isAbzug ? '#ef4444' : 'var(--green)'};">${isAbzug ? '' : '+'}${h.points} ⭐</span>
+                        <span style="font-weight: 800; color: ${colorName};">${h.kidName}</span>
+                        <span class="history-pts" style="color: ${colorPts};">${ptsText}</span>
                     </div>
                     <div style="font-size: 0.85rem; color: #cbd5e1;">${h.taskName}</div>
                     <div class="history-date">${d.toLocaleDateString()} ${d.toLocaleTimeString()}</div>
@@ -1531,9 +1549,11 @@
                 currentPin += num; updatePinDisplay();
                 if (currentPin.length === 4) {
                     setTimeout(() => {
-                        if (currentPin === expectedPinForAction) {
-                            // Caching (Entsperrt bleiben) nur erlauben, wenn kein spezifischer PIN (wie Geburtstag) geprüft wurde
-                            if (!expectedPinForAction || expectedPinForAction === state.pin) {
+                        // NEU: Wir akzeptieren entweder den spezifischen Pin (Geburtstag) ODER den generellen System-Pin
+                        if (currentPin === expectedPinForAction || currentPin === state.pin) {
+                            // Caching (Entsperrt bleiben) nur erlauben, wenn kein spezifischer PIN (wie Geburtstag) geprüft wurde,
+                            // oder wenn mit dem System-Pin entsperrt wurde.
+                            if (!expectedPinForAction || expectedPinForAction === state.pin || currentPin === state.pin) {
                                 lastUnlockTime = Date.now();
                                 const uCont = document.getElementById('unlock-status-container');
                                 uCont.innerHTML = `<span style="background:var(--success); color:white; padding: 2px 6px; border-radius: 8px; font-size: 0.6rem; animation: pulseBtn 2s infinite;">🔓 ENTSPERRT</span>`;
